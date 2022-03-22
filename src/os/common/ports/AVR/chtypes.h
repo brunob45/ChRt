@@ -32,7 +32,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../../portability/ccportab.h"
+#include "ccportab.h"
 
 /**
  * @name    Kernel types

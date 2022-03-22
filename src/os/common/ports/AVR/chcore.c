@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -69,7 +69,7 @@ bool __avr_in_isr;
 #if !defined(__DOXYGEN__)
 __attribute__((naked, weak))
 #endif
-void __port_switch(thread_t *ntp, thread_t *otp) {
+void _port_switch(thread_t *ntp, thread_t *otp) {
 
   (void)ntp;
   (void)otp;
@@ -93,7 +93,7 @@ void __port_switch(thread_t *ntp, thread_t *otp) {
   asm volatile ("push    r28");
   asm volatile ("push    r29");
 
-#if defined(_CHIBIOS_RT_)
+#if defined(__CHIBIOS_RT__)
   asm volatile ("movw    r30, r22");
   asm volatile ("in      r0, 0x3d");
   asm volatile ("std     Z+5, r0");
@@ -107,7 +107,7 @@ void __port_switch(thread_t *ntp, thread_t *otp) {
   asm volatile ("out     0x3e, r0");
 #endif
 
-#if defined(_CHIBIOS_NIL_)
+#if defined(__CHIBIOS_NIL__)
   asm volatile ("movw    r30, r22");
   asm volatile ("in      r0, 0x3d");
   asm volatile ("std     Z+0, r0");
@@ -147,7 +147,7 @@ void __port_switch(thread_t *ntp, thread_t *otp) {
  * @details If the work function returns @p chThdExit() is automatically
  *          invoked.
  */
-void __port_thread_start(void) {
+void _port_thread_start(void) {
 
   chSysUnlock();
   asm volatile ("movw    r24, r4");

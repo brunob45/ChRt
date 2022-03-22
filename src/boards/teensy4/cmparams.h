@@ -34,7 +34,7 @@ typedef enum IRQn {
   SysTick_IRQn                  =  -1,      /* 15 System Tick Interrupt */
 } IRQn_Type;
 
-#include "os/common/ext/ARM/CMSIS/Core/core_cm7.h"
+#include "os/common/CMSIS/core_cm7.h"
 #endif  // !defined(_FROM_ASM_)
 #endif // chparams_teensy4_h
 
