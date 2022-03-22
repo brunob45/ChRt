@@ -2,18 +2,18 @@
 #define chconf_rt_h
 #define _CHIBIOS_RT_CONF_
 #ifdef __AVR__
-#include "boards/avr/chconf_avr.h"
+#include "boards/avr/chconf.h"
 #elif defined(__SAM3X8E__) || defined(__SAM3X8H__)
-#include "boards/sam3x/chconf_sam3x.h"
+#include "boards/sam3x/chconf.h"
 #elif defined(__SAMD21G18A__) || defined(__SAMD21J18A__)
-#include "boards/samd/chconf_samd.h"
+#include "boards/samd/chconf.h"
 #elif defined(__MK20DX256__) || defined(__MK20DX128__)\
       || defined(__MK64FX512__) || defined(__MK66FX1M0__)
-#include "boards/teensy3/chconf_teensy3.h"    
+#include "boards/teensy3/chconf.h"    
 #elif defined(__IMXRT1062__)
-#include "boards/teensy4/chconf_teensy4.h"   
+#include "boards/teensy4/chconf.h"   
 #else 
 #error "unknown processor type"
 #endif  // __AVR__
-#include "rt/templates/chconf.h"
+#include "os/rt/templates/chconf.h"
 #endif  // chconf_rt_h

@@ -1,8 +1,8 @@
-#include "rt/include/ch.h"
+#include "os/rt/include/ch.h"
 #if defined(__IMXRT1062__)
-#include "boards/teensy4/st_lld_teensy4.h"
+#include "boards/teensy4/st_lld.h"
 #elif defined(__AVR__)
-#include "boards/avr/st_lld_avr.h"
+#include "boards/avr/st_lld.h"
 #else  // defined(__IMXRT1062__)
 #ifdef __cplusplus
 extern "C" {

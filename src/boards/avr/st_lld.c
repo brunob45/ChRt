@@ -1,5 +1,5 @@
 #ifdef  __AVR__
-#include "../../hal/osal.h"
+#include "os/hal/osal.h"
 #if (OSAL_ST_MODE == OSAL_ST_MODE_PERIODIC) || defined(__DOXYGEN__)
 #if OSAL_ST_FREQUENCY != (1000000UL/1024)
 #error "AVR only supports CH_CFG_ST_FREQUENCY == (1000000UL/1024)"

@@ -3,7 +3,7 @@
 #if defined(__MK20DX256__) || defined(__MK20DX128__)\
     || defined(__MK64FX512__) || defined(__MK66FX1M0__)
     
-#include "../../hal/osal.h"
+#include "os/hal/osal.h"
 
 #if OSAL_ST_MODE == OSAL_ST_MODE_PERIODIC
 #if 1000000 % OSAL_ST_FREQUENCY != 0
