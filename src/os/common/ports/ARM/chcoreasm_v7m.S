@@ -32,13 +32,8 @@
 #if !defined(TRUE) || defined(__DOXYGEN__)
 #define TRUE    1
 #endif
-#ifdef __arm__  // WHG
+
 #define _FROM_ASM_
-#include "cmparams.h"  // WHG
-#if (CORTEX_MODEL == 0) // WHG
-/* prevent Conflicting CPU architectures error WHG */
-  .cpu    cortex-m0 // WHG
-#elif (CORTEX_MODEL == 3) || (CORTEX_MODEL == 4) || (CORTEX_MODEL == 7) // WHG
 #include "chlicense.h"
 #include "chconf.h"
 #include "chcore.h"
@@ -245,6 +240,5 @@ __port_exit_from_isr:
 .L1:            b       .L1
 
 #endif /* !defined(__DOXYGEN__) */
-#endif  // (CORTEX_MODEL == 3) || (CORTEX_MODEL == 4) || (CORTEX_MODEL == 7) WHG
-#endif  // __arm__ WHG
+
 /** @} */

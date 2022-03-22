@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,10 +18,10 @@
 */
 
 /**
- * @file    chcore_v7m.c
- * @brief   ARMv7-M architecture port code.
+ * @file    ARMv7-M/chcore.c
+ * @brief   ARMv7-M port code.
  *
- * @addtogroup ARMCMx_V7M_CORE
+ * @addtogroup ARMV7M_CORE
  * @{
  */
 
@@ -58,13 +58,13 @@ __attribute__((noinline))
 void port_syslock_noinline(void) {
 
   port_lock();
-  _stats_start_measure_crit_thd();
-  _dbg_check_lock();
+  __stats_start_measure_crit_thd();
+  __dbg_check_lock();
 }
 
 uint32_t port_get_s_psp(void) {
 
-  return (uint32_t)currp->ctx.syscall.psp;
+  return (uint32_t)__sch_get_currthread()->ctx.syscall.psp;
 }
 
 __attribute__((weak))
@@ -144,7 +144,7 @@ void SVC_Handler(void) {
     struct port_extctx *newctxp;
 
     /* Supervisor PSP from the thread context structure.*/
-    s_psp = (uint32_t)currp->ctx.syscall.psp;
+    s_psp = (uint32_t)__sch_get_currthread()->ctx.syscall.psp;
 
     /* Pushing the port_linkctx into the supervisor stack.*/
     s_psp -= sizeof (struct port_linkctx);
@@ -246,6 +246,10 @@ void PendSV_Handler(void) {
 
 /**
  * @brief   Port-related initialization code.
+ *
+ * @param[in, out] oip  pointer to the @p os_instance_t structure
+ *
+ * @notapi
  */
 void port_init(os_instance_t *oip) {
 
@@ -285,15 +289,13 @@ void port_init(os_instance_t *oip) {
   }
 #endif
 
-#if PORT_USE_SYSCALL == TRUE
+#if (PORT_ENABLE_GUARD_PAGES == TRUE) || (PORT_USE_SYSCALL == TRUE)
   /* MPU is enabled.*/
   mpuEnable(MPU_CTRL_PRIVDEFENA);
 #endif
 }
 
-#if ((CH_DBG_ENABLE_STACK_CHECK == TRUE) &&                                 \
-     (PORT_ENABLE_GUARD_PAGES == TRUE)) ||                                  \
-    defined(__DOXYGEN__)
+#if (PORT_ENABLE_GUARD_PAGES == TRUE) || defined(__DOXYGEN__)
 /**
  * @brief   Setting up MPU region for the current thread.
  */
@@ -305,7 +307,7 @@ void __port_set_region(void) {
 #endif
 
 /**
- * @brief   Exception exit redirection to __port_switch_from_isr().
+ * @brief   Exception exit redirection to @p __port_switch_from_isr().
  */
 void __port_irq_epilogue(void) {
 
@@ -330,7 +332,7 @@ void __port_irq_epilogue(void) {
         __set_CONTROL(control & ~1U);
 
         /* Switching to S-PSP taking it from the thread context.*/
-        s_psp = (uint32_t)currp->ctx.syscall.psp;
+        s_psp = (uint32_t)__sch_get_currthread()->ctx.syscall.psp;
 
         /* Pushing the middle context for returning to the original frame
            and mode.*/
