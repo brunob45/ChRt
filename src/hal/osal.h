@@ -57,8 +57,9 @@
  * @{
  */
 #define MSG_OK                              (msg_t)0
-#define MSG_TIMEOUT                         (msg_t)-1
-#define MSG_RESET                           (msg_t)-2
+#define MSG_RESET                           (msg_t)-1
+#define MSG_TIMEOUT                         (msg_t)-2
+#define MSG_WAIT                            (msg_t)-10
 /** @} */
 #endif
 
@@ -91,7 +92,7 @@
 #define OSAL_ST_RESOLUTION                  CH_CFG_ST_RESOLUTION
 
 /**
- * @brief   Required systick frequency or resolution.
+ * @brief   Frequency in Hertz of the system tick.
  */
 #define OSAL_ST_FREQUENCY                   CH_CFG_ST_FREQUENCY
 
@@ -105,24 +106,65 @@
 #endif
 /** @} */
 
+/**
+ * @name    IRQ-related constants
+ * @{
+ */
+/**
+ * @brief   Total priority levels.
+ */
+#define OSAL_IRQ_PRIORITY_LEVELS            (1U << CORTEX_PRIORITY_BITS)
+
+/**
+ * @brief   Highest IRQ priority for HAL drivers.
+ */
+#if (CORTEX_MODEL == 0) || defined(__DOXYGEN__)
+#define OSAL_IRQ_MAXIMUM_PRIORITY           0
+#else
+#define OSAL_IRQ_MAXIMUM_PRIORITY           1
+#endif
+
+/**
+ * @brief   Converts from numeric priority to BASEPRI register value.
+ */
+#define OSAL_BASEPRI(priority)              ((priority) << (8U - CORTEX_PRIORITY_BITS))
+/** @} */
+
 /*===========================================================================*/
 /* Module pre-compile time settings.                                         */
 /*===========================================================================*/
 
+/**
+ * @brief   Enables OSAL assertions.
+ */
+#if !defined(OSAL_DBG_ENABLE_ASSERTS) || defined(__DOXYGEN__)
+#define OSAL_DBG_ENABLE_ASSERTS             FALSE
+#endif
+
+/**
+ * @brief   Enables OSAL functions parameters checks.
+ */
+#if !defined(OSAL_DBG_ENABLE_CHECKS) || defined(__DOXYGEN__)
+#define OSAL_DBG_ENABLE_CHECKS              FALSE
+#endif
+
+/**
+ * @brief   OSAL initialization hook.
+ */
+#if !defined(OSAL_INIT_HOOK) || defined(__DOXYGEN__)
+#define OSAL_INIT_HOOK()
+#endif
+
+/**
+ * @brief   Idle loop hook macro.
+ */
+#if !defined(OSAL_IDLE_HOOK) || defined(__DOXYGEN__)
+#define OSAL_IDLE_HOOK()
+#endif
+
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
-
-#if !(OSAL_ST_MODE == OSAL_ST_MODE_NONE) &&                                 \
-    !(OSAL_ST_MODE == OSAL_ST_MODE_PERIODIC) &&                             \
-    !(OSAL_ST_MODE == OSAL_ST_MODE_FREERUNNING)
-#error "invalid OSAL_ST_MODE setting in osal.h"
-#endif
-
-#if (OSAL_ST_RESOLUTION != 16) && (OSAL_ST_RESOLUTION != 32) &&             \
-    (OSAL_ST_RESOLUTION != 64)
-#error "invalid OSAL_ST_RESOLUTION, must be 16, 32 or 64"
-#endif
 
 /*===========================================================================*/
 /* Module data structures and types.                                         */
@@ -174,6 +216,18 @@ typedef uint32_t rtcnt_t;
 
 #if 0
 /**
+ * @brief   Type of a thread.
+ * @note    The content of this structure is not part of the API and should
+ *          not be relied upon. Implementers may define this structure in
+ *          an entirely different way.
+ */
+typedef struct {
+  volatile msg_t        message;
+} thread_t;
+#endif
+
+#if 0
+/**
  * @brief   Type of a thread reference.
  */
 typedef thread_t * thread_reference_t;
@@ -221,7 +275,7 @@ struct event_source {
 
 /**
  * @brief   Type of a mutex.
- * @note    If the OS does not support mutexes or there is no OS then the
+ * @note    If the OS does not support mutexes or there is no OS then them
  *          mechanism can be simulated.
  */
 #if CH_CFG_USE_MUTEXES || defined(__DOXYGEN__)
@@ -236,8 +290,8 @@ typedef uint32_t mutex_t;
  * @brief   Type of a thread queue.
  * @details A thread queue is a queue of sleeping threads, queued threads
  *          can be dequeued one at time or all together.
- * @note    In this implementation it is implemented as a single reference
- *          because there are no real threads.
+ * @note    If the OSAL is implemented on a bare metal machine without RTOS
+ *          then the queue can be implemented as a single thread reference.
  */
 typedef struct {
   thread_reference_t    tr;
@@ -282,13 +336,13 @@ typedef struct {
 
 /**
  * @brief   I-Class state check.
- * @note    Not implemented in this simplified OSAL.
+ * @note    Implementation is optional.
  */
 #define osalDbgCheckClassI() chDbgCheckClassI()
 
 /**
  * @brief   S-Class state check.
- * @note    Not implemented in this simplified OSAL.
+ * @note    Implementation is optional.
  */
 #define osalDbgCheckClassS() chDbgCheckClassS()
 /** @} */

@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -80,13 +80,31 @@ typedef union heap_header heap_header_t;
  * @brief   Memory heap block header.
  */
 union heap_header {
+  /**
+   * @brief   Header for free blocks.
+   */
   struct {
-    heap_header_t       *next;      /**< @brief Next block in free list.    */
-    size_t              pages;      /**< @brief Size of the area in pages.  */
+    /**
+     * @brief   Next block in free list.
+     */
+    heap_header_t       *next;
+    /**
+     * @brief   Size of the area in pages.
+     */
+    size_t              pages;
   } free;
+  /**
+   * @brief   Header for used blocks.
+   */
   struct {
-    memory_heap_t       *heap;      /**< @brief Block owner heap.           */
-    size_t              size;       /**< @brief Size of the area in bytes.  */
+    /**
+     * @brief   Block owner heap.
+     */
+    memory_heap_t       *heap;
+    /**
+     * @brief   Size of the area in bytes.
+     */
+    size_t              size;
   } used;
 };
 
@@ -94,13 +112,28 @@ union heap_header {
  * @brief   Structure describing a memory heap.
  */
 struct memory_heap {
-  memgetfunc2_t         provider;   /**< @brief Memory blocks provider for
-                                                this heap.                  */
-  heap_header_t         header;     /**< @brief Free blocks list header.    */
+  /**
+   * @brief   Memory blocks provider for this heap.
+   */
+  memgetfunc2_t         provider;
+  /**
+   * @brief   Memory area for this heap.
+   */
+  memory_area_t         area;
+  /**
+   * @brief   Free blocks list header.
+   */
+  heap_header_t         header;
 #if (CH_CFG_USE_MUTEXES == TRUE) || defined(__DOXYGEN__)
-  mutex_t               mtx;        /**< @brief Heap access mutex.          */
+  /**
+   * @brief   Heap access mutex.
+   */
+  mutex_t               mtx;
 #else
-  semaphore_t           sem;        /**< @brief Heap access semaphore.      */
+  /**
+   * @brief   Heap access fallback semaphore.
+   */
+  semaphore_t           sem;
 #endif
 };
 
@@ -122,11 +155,12 @@ struct memory_heap {
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void _heap_init(void);
+  void __heap_init(void);
   void chHeapObjectInit(memory_heap_t *heapp, void *buf, size_t size);
   void *chHeapAllocAligned(memory_heap_t *heapp, size_t size, unsigned align);
   void chHeapFree(void *p);
   size_t chHeapStatus(memory_heap_t *heapp, size_t *totalp, size_t *largestp);
+  bool chHeapIntegrityCheck(memory_heap_t *heapp);
 #ifdef __cplusplus
 }
 #endif

@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -54,11 +54,29 @@
  * @{
  */
 /**
+ * @brief   Natural data alignment for the current architecture.
+ * @note    Represents the required alignment for integer and pointer
+ *          data types.
+ */
+#define MEM_NATURAL_ALIGN           PORT_NATURAL_ALIGN
+
+/**
+ * @brief   Port-defined check on function pointers.
+ *
+ * @param[in] p         function pointer to be checked
+ */
+#if defined(PORT_IS_VALID_FUNCTION) || defined(__DOXYGEN__)
+#define MEM_IS_VALID_FUNCTION(p)    PORT_IS_VALID_FUNCTION(p)
+#else
+#define MEM_IS_VALID_FUNCTION(p)    true
+#endif
+
+/**
  * @brief   Alignment mask constant.
  *
  * @param[in] a         alignment, must be a power of two
  */
-#define MEM_ALIGN_MASK(a)       ((size_t)(a) - 1U)
+#define MEM_ALIGN_MASK(a)           ((size_t)(a) - 1U)
 
 /**
  * @brief   Aligns to the previous aligned memory address.
@@ -88,7 +106,7 @@
  * @param[in] p         variable to be aligned
  * @param[in] a         alignment, must be a power of two
  */
-#define MEM_IS_ALIGNED(p, a)    (((size_t)(p) & MEM_ALIGN_MASK(a)) == 0U)
+#define MEM_IS_ALIGNED(p, a)        (((size_t)(p) & MEM_ALIGN_MASK(a)) == 0U)
 
 /**
  * @brief   Returns whatever a constant is a valid alignment.
