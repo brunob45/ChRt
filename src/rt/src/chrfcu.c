@@ -18,16 +18,15 @@
 */
 
 /**
- * @file    chXxx.c
- * @brief   XXX module code.
+ * @file    rt/src/chrfcu.c
+ * @brief   Runtime Faults Collection Unit code.
  *
- * @addtogroup XXX
+ * @addtogroup rfcu
+ * @details Runtime Faults Collection Unit service.
  * @{
  */
 
 #include "ch.h"
-
-#if CH_CFG_USE_XXX || defined(__DOXYGEN__)
 
 /*===========================================================================*/
 /* Module local definitions.                                                 */
@@ -54,27 +53,43 @@
 /*===========================================================================*/
 
 /**
- * @brief   XXX Module initialization.
- * @note    This function is implicitly invoked on system initialization,
- *          there is no need to explicitly initialize the module.
+ * @brief   Adds fault flags to the current mask.
  *
- * @notapi
+ * @param[in] mask      fault flags to be added
  */
-void _xxx_init(void) {
+void chRFCUCollectFaultsI(rfcu_mask_t mask) {
 
+#if CH_CFG_SMP_MODE == FALSE
+  currcore->rfcu.mask |= mask;
+#else
+  ch_system.rfcu.mask |= mask;
+#endif
+
+  CH_CFG_RUNTIME_FAULTS_HOOK(mask);
 }
 
 /**
- * @brief   Initializes a @p xxx_t object.
+ * @brief   Returns the current faults mask clearing it.
  *
- * @param[out] xxxp     pointer to the @p xxx_t object
- *
- * @init
+ * @param[in] mask      mask of faults to be read and cleared
+ * @return              The current faults mask.
+ * @retval 0            if no faults were collected since last call to this
+ *                      function.
  */
-void chXxxObjectInit(xxx_t *xxxp) {
+rfcu_mask_t chRFCUGetAndClearFaultsI(rfcu_mask_t mask) {
+  rfcu_mask_t m;
 
+#if CH_CFG_SMP_MODE == FALSE
+  os_instance_t *oip = currcore;
+
+  m = oip->rfcu.mask & mask;
+  oip->rfcu.mask &= ~m;
+#else
+
+  m = ch_system.rfcu.mask & mask;
+  ch_system.rfcu.mask &= ~m;
+#endif
+
+  return m;
 }
-
-#endif /* CH_CFG_USE_XXX */
-
 /** @} */

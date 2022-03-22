@@ -16,26 +16,34 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
-   Concepts and parts of this file have been contributed by Leon Woestenberg.
- */
 
 /**
- * @file    rt/include/chcond.h
- * @brief   Condition Variables macros and structures.
+ * @file    rt/include/chrfcu.h
+ * @brief   Runtime Faults Collection Unit macros and structures.
  *
- * @addtogroup condvars
+ * @addtogroup rfcu
  * @{
  */
 
-#ifndef CHCOND_H
-#define CHCOND_H
-
-#if (CH_CFG_USE_CONDVARS == TRUE) || defined(__DOXYGEN__)
+#ifndef CHRFCU_H
+#define CHRFCU_H
 
 /*===========================================================================*/
 /* Module constants.                                                         */
 /*===========================================================================*/
+
+/**
+ * @name    Predefined Faults
+ * @{
+ */
+#define CH_RFCU_VT_INSUFFICIENT_DELTA       1U
+#define CH_RFCU_VT_SKIPPED_DEADLINE         2U
+/** @} */
+
+/**
+ * @brief   Mask of all faults.
+ */
+#define CH_RFCU_ALL_FAULTS                  ((rfcu_mask_t)-1)
 
 /*===========================================================================*/
 /* Module pre-compile time settings.                                         */
@@ -45,43 +53,28 @@
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
 
-#if CH_CFG_USE_MUTEXES == FALSE
-#error "CH_CFG_USE_CONDVARS requires CH_CFG_USE_MUTEXES"
-#endif
-
 /*===========================================================================*/
 /* Module data structures and types.                                         */
 /*===========================================================================*/
 
 /**
- * @brief   condition_variable_t structure.
+ * @brief   Type of a faults mask.
  */
-typedef struct condition_variable {
-  ch_queue_t            queue;              /**< @brief Condition variable
-                                                 threads queue.             */
-} condition_variable_t;
+typedef uint32_t rfcu_mask_t;
+
+/**
+ * @brief   Type of an RFCU structure.
+ */
+typedef struct ch_rfcu {
+  /**
+   * @brief   Mask of the pending runtime faults.
+   */
+  rfcu_mask_t                   mask;
+} rfcu_t;
 
 /*===========================================================================*/
 /* Module macros.                                                            */
 /*===========================================================================*/
-
-/**
- * @brief Data part of a static condition variable initializer.
- * @details This macro should be used when statically initializing a condition
- *          variable that is part of a bigger structure.
- *
- * @param[in] name      the name of the condition variable
- */
-#define __CONDVAR_DATA(name) {__CH_QUEUE_DATA(name.queue)}
-
-/**
- * @brief Static condition variable initializer.
- * @details Statically initialized condition variables require no explicit
- *          initialization using @p chCondInit().
- *
- * @param[in] name      the name of the condition variable
- */
-#define CONDVAR_DECL(name) condition_variable_t name = __CONDVAR_DATA(name)
 
 /*===========================================================================*/
 /* External declarations.                                                    */
@@ -90,18 +83,8 @@ typedef struct condition_variable {
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void chCondObjectInit(condition_variable_t *cp);
-  void chCondObjectDispose(condition_variable_t *cp);
-  void chCondSignal(condition_variable_t *cp);
-  void chCondSignalI(condition_variable_t *cp);
-  void chCondBroadcast(condition_variable_t *cp);
-  void chCondBroadcastI(condition_variable_t *cp);
-  msg_t chCondWait(condition_variable_t *cp);
-  msg_t chCondWaitS(condition_variable_t *cp);
-#if CH_CFG_USE_CONDVARS_TIMEOUT == TRUE
-  msg_t chCondWaitTimeout(condition_variable_t *cp, sysinterval_t timeout);
-  msg_t chCondWaitTimeoutS(condition_variable_t *cp, sysinterval_t timeout);
-#endif
+  void chRFCUCollectFaultsI(rfcu_mask_t mask);
+  rfcu_mask_t chRFCUGetAndClearFaultsI(rfcu_mask_t mask);
 #ifdef __cplusplus
 }
 #endif
@@ -110,8 +93,19 @@ extern "C" {
 /* Module inline functions.                                                  */
 /*===========================================================================*/
 
-#endif /* CH_CFG_USE_CONDVARS == TRUE */
+/**
+ * @brief   Runtime Faults Collection Unit initialization.
+ * @note    Internal use only.
+ *
+ * @param[out] rfcup    pointer to the @p rfcu_t structure
+ *
+ * @notapi
+ */
+static inline void __rfcu_object_init(rfcu_t *rfcup) {
 
-#endif /* CHCOND_H */
+  rfcup->mask = (rfcu_mask_t)0;
+}
+
+#endif /* CHRFCU_H */
 
 /** @} */

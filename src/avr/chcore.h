@@ -320,7 +320,7 @@ struct port_context {
   __avr_in_isr = false;                                                     \
   _dbg_check_lock();                                                        \
   if (chSchIsPreemptionRequired())                                          \
-    chSchDoReschedule();                                                    \
+    chSchDoPreemption();                                                    \
   _dbg_check_unlock();                                                      \
 }
 
