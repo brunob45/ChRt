@@ -1,5 +1,5 @@
 #if defined(__SAMD21G18A__) || defined(__SAMD21J18A__)
-#include "../hal/osal.h"
+#include "os/hal/osal.h"
 #if OSAL_ST_MODE == OSAL_ST_MODE_PERIODIC
 #if OSAL_ST_FREQUENCY != 1000
 #error "SAMD only supports CH_CFG_ST_FREQUENCY == 1000"

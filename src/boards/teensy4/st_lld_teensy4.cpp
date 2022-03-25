@@ -1,6 +1,6 @@
 #include "Arduino.h"
 #if defined(__IMXRT1062__)
-#include "../hal/osal.h"
+#include "os/hal/osal.h"
 //------------------------------------------------------------------------------
 extern "C" void HardFault_Handler(void);
 extern "C" void BusFault_Handler(void);

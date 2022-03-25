@@ -61,7 +61,7 @@ typedef struct
   #define __STATIC_FORCEINLINE                   __attribute__((always_inline)) static inline
 #endif
 
-#include "../CMSIS/core_cm3.h"
+#include "os/CMSIS/core_cm3.h"
 #endif  // _FROM_ASM_
 
 #endif /* cmparams_sam3x_h */
