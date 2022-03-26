@@ -19,7 +19,7 @@ jobs:
       matrix:
         example: ${{ fromJson(needs.list-examples.outputs.matrix) }}
         board: [
-          zero #, uno, due, teensy30, teensy31, teensy35, teensy36, teensy40, teensy41
+          zero #, due, teensy30, teensy31, teensy35, teensy36, teensy40, teensy41
         ]
 
     steps:
