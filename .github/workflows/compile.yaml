@@ -22,7 +22,10 @@ jobs:
           # examples/chMutex,
           # examples/chRoundRobin,
           # examples/chSemaphore
-          ]
+        ]
+        board: [
+          zero, uno, due, teensy30, teensy31, teensy35, teensy36, teensy40, teensy41
+        ]
 
     steps:
     - uses: actions/checkout@v3
@@ -44,6 +47,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: pio ci --lib="." --board=zero --board=uno --board=due --board=teensy30 --board=teensy31 --board=teensy35 --board=teensy36 --board=teensy40 --board=teensy41
+      run: pio ci --lib="." --board=${{ matrix.board }}
       env:
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
