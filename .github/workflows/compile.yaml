@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         example: ${{ fromJson(needs.list-examples.outputs.matrix) }}
-        board: 
+        board: [
           zero,
           # uno, -- build fails
           due,
