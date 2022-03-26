@@ -8,33 +8,21 @@ jobs:
     strategy:
       matrix:
         example: [
-          examples/chBlink,
-          examples/chBlinkPrint,
-          examples/chContextTime,
-          examples/chCoop,
-          examples/chDataSharing,
-          examples/chEvent,
-          examples/chFifoDataLogger,
-          examples/chIsrSemaphore,
-          examples/chJitter,
-          examples/chMailbox,
-          examples/chMemPool,
-          examples/chMutex,
-          examples/chRoundRobin,
-          examples/chSemaphore
+          examples/chBlink
+          # examples/chBlinkPrint,
+          # examples/chContextTime,
+          # examples/chCoop,
+          # examples/chDataSharing,
+          # examples/chEvent,
+          # examples/chFifoDataLogger,
+          # examples/chIsrSemaphore,
+          # examples/chJitter,
+          # examples/chMailbox,
+          # examples/chMemPool,
+          # examples/chMutex,
+          # examples/chRoundRobin,
+          # examples/chSemaphore
           ]
-        board: [
-          zero,
-          uno,
-          due,
-          mega,
-          teensy30,
-          teensy31,
-          teensy35,
-          teensy36,
-          teensy40,
-          teensy41
-        ]
 
     steps:
     - uses: actions/checkout@v3
@@ -56,6 +44,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: pio ci --lib="." --board=${{ matrix.board }}
+      run: pio ci --lib="." --board=zero --board=uno --board=due --board=mega --board=teensy30 --board=teensy31 --board=teensy35 --board=teensy36 --board=teensy40 --board=teensy41
       env:
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
