@@ -14,6 +14,7 @@ jobs:
       run: echo "::set-output name=matrix::$(ls examples | jq -R -s -c 'split("\n")[:-1]')"
 
   build:
+    needs: list-examples
     runs-on: ubuntu-latest
     strategy:
       matrix:
