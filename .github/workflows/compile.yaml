@@ -3,28 +3,23 @@ name: PlatformIO CI
 on: [pull_request, repository_dispatch]
 
 jobs:
+  # from opensearch-project/opensearch-build: .github/workflows/manifest.yml
+  list-examples:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - uses: actions/checkout@v3
+    - id: set-matrix
+      run: echo "::set-output name=matrix::$(ls examples | jq -R -s -c 'split("\n")[:-1]')"
+
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        example: [
-          examples/chBlink
-          # examples/chBlinkPrint,
-          # examples/chContextTime,
-          # examples/chCoop,
-          # examples/chDataSharing,
-          # examples/chEvent,
-          # examples/chFifoDataLogger,
-          # examples/chIsrSemaphore,
-          # examples/chJitter,
-          # examples/chMailbox,
-          # examples/chMemPool,
-          # examples/chMutex,
-          # examples/chRoundRobin,
-          # examples/chSemaphore
-        ]
+        example: ${{ fromJson(needs.list-examples.outputs.matrix) }}
         board: [
-          zero, uno, due, teensy30, teensy31, teensy35, teensy36, teensy40, teensy41
+          zero #, uno, due, teensy30, teensy31, teensy35, teensy36, teensy40, teensy41
         ]
 
     steps:
@@ -49,4 +44,4 @@ jobs:
     - name: Run PlatformIO
       run: pio ci --lib="." --board=${{ matrix.board }}
       env:
-        PLATFORMIO_CI_SRC: ${{ matrix.example }}
+        PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
