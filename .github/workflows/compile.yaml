@@ -23,11 +23,11 @@ jobs:
           zero,
           # uno, -- build fails
           due,
-          teensy30,
+          # teensy30, -- redundant
           teensy31,
-          teensy35,
+          # teensy35, -- redundant
           teensy36,
-          teensy40,
+          # teensy40, -- redundant
           teensy41
         ]
 
@@ -50,7 +50,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade platformio
+    - name: Install Library Dependencies
+      run: pio lib -g install SD
     - name: Run PlatformIO
-      run: pio ci --lib="." --lib="SD" --board=${{ matrix.board }}
+      run: pio ci --lib="." --board=${{ matrix.board }}
       env:
         PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
