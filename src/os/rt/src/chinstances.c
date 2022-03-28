@@ -106,7 +106,7 @@ void chInstanceObjectInit(os_instance_t *oip,
   oip->config = oicp;
 
   /* Port initialization for the current instance.*/
-  port_init();
+  port_init(oip);
 
   /* Ready list initialization.*/
   ch_pqueue_init(&oip->rlist.pqueue);

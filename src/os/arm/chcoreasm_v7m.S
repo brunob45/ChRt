@@ -191,7 +191,7 @@ _port_thread_start:
                 bl      _port_set_region
 #endif
 #if CH_DBG_SYSTEM_STATE_CHECK
-                bl      _dbg_check_unlock
+                bl      __dbg_check_unlock
 #endif
 #if CH_DBG_STATISTICS
                 bl      _stats_stop_measure_crit_thd
@@ -220,11 +220,11 @@ _port_switch_from_isr:
                 bl      _stats_start_measure_crit_thd
 #endif
 #if CH_DBG_SYSTEM_STATE_CHECK
-                bl      _dbg_check_lock
+                bl      __dbg_check_lock
 #endif
                 bl      chSchDoPreemption
 #if CH_DBG_SYSTEM_STATE_CHECK
-                bl      _dbg_check_unlock
+                bl      __dbg_check_unlock
 #endif
 #if CH_DBG_STATISTICS
                 bl      _stats_stop_measure_crit_thd

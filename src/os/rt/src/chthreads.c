@@ -48,8 +48,6 @@
  * @{
  */
 
-#include <string.h>
-
 #include "ch.h"
 
 /*===========================================================================*/
@@ -480,6 +478,7 @@ void chThdRelease(thread_t *tp) {
  *
  * @api
  */
+void chThdExit(msg_t msg) __attribute__((used));  // WHG 
 void chThdExit(msg_t msg) {
 
   chSysLock();
@@ -847,51 +846,11 @@ void chThdResume(thread_reference_t *trp, msg_t msg) {
 }
 
 /**
- * @brief   Initializes a threads queue object.
- *
- * @param[out] tqp      pointer to a @p threads_queue_t structure
- *
- * @init
- */
-void chThdQueueObjectInit(threads_queue_t *tqp) {
-
-  chDbgCheck(tqp);
-
-  ch_queue_init(&tqp->queue);
-}
-
-/**
- * @brief   Disposes a threads queue.
- * @note    Objects disposing does not involve freeing memory but just
- *          performing checks that make sure that the object is in a
- *          state compatible with operations stop.
- * @note    If the option @p CH_CFG_HARDENING_LEVEL is greater than zero then
- *          the object is also cleared, attempts to use the object would likely
- *          result in a clean memory access violation because dereferencing
- *          of @p NULL pointers rather than dereferencing previously valid
- *          pointers.
- *
- * @param[in] tqp       pointer to a @p threads_queue_t structure
- *
- * @dispose
- */
-void chThdObjectDispose(threads_queue_t *tqp) {
-
-  chDbgCheck(tqp != NULL);
-  chDbgAssert(ch_queue_isempty(&tqp->queue),
-              "object in use");
-
-#if CH_CFG_HARDENING_LEVEL > 0
-  memset((void *)tqp, 0, sizeof (threads_queue_t));
-#endif
-}
-
-/**
  * @brief   Enqueues the caller thread on a threads queue object.
  * @details The caller thread is enqueued and put to sleep until it is
  *          dequeued or the specified timeouts expires.
  *
- * @param[in] tqp       pointer to a @p threads_queue_t structure
+ * @param[in] tqp       pointer to the threads queue object
  * @param[in] timeout   the timeout in system ticks, the special values are
  *                      handled as follow:
  *                      - @a TIME_INFINITE the thread enters an infinite sleep
@@ -925,7 +884,7 @@ msg_t chThdEnqueueTimeoutS(threads_queue_t *tqp, sysinterval_t timeout) {
  * @brief   Dequeues and wakes up one thread from the threads queue object,
  *          if any.
  *
- * @param[in] tqp       pointer to a @p threads_queue_t structure
+ * @param[in] tqp       pointer to the threads queue object
  * @param[in] msg       the message code
  *
  * @iclass
@@ -940,7 +899,7 @@ void chThdDequeueNextI(threads_queue_t *tqp, msg_t msg) {
 /**
  * @brief   Dequeues and wakes up all threads from the threads queue object.
  *
- * @param[in] tqp       pointer to a @p threads_queue_t structure
+ * @param[in] tqp       pointer to the threads queue object
  * @param[in] msg       the message code
  *
  * @iclass

@@ -59,7 +59,7 @@ void port_syslock_noinline(void) {
 
   port_lock();
   _stats_start_measure_crit_thd();
-  _dbg_check_lock();
+  __dbg_check_lock();
 }
 
 uint32_t port_get_s_psp(void) {
@@ -246,8 +246,14 @@ void PendSV_Handler(void) {
 
 /**
  * @brief   Port-related initialization code.
+ *
+ * @param[in, out] oip  pointer to the @p os_instance_t structure
+ *
+ * @notapi
  */
-void port_init(void) {
+void port_init(os_instance_t *oip) {
+
+  (void)oip;
 
   /* Starting in a known IRQ configuration.*/
   port_suspend();
