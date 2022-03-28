@@ -1,0 +1,42 @@
+name: PlatformIO CI
+
+on: [pull_request, repository_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        example:
+        - { sketch: chBlink, board: zero }
+        - { sketch: chBlink, board: uno }
+        - { sketch: chBlink, board: due }
+        - { sketch: chBlink, board: teensy2 }
+        - { sketch: chBlink, board: teensy2pp }
+        - { sketch: chBlink, board: teensy30 }
+        - { sketch: chBlink, board: teensy31 }
+        - { sketch: chBlink, board: teensy35 }
+        - { sketch: chBlink, board: teensy36 }
+        - { sketch: chBlink, board: teensy40 }
+        - { sketch: chBlink, board: teensy41 }
+
+        - { sketch: chBlinkPrint,  board: teensy40 }
+        - { sketch: chContextTime, board: teensy40 }
+        - { sketch: chCoop,        board: teensy40 }
+        - { sketch: chDataSharing, board: teensy40 }
+        - { sketch: chEvent,       board: teensy40 }
+        # - { sketch: chFifoDataLogger,board: teensy40 }
+        - { sketch: chIsrSemaphore,board: teensy40 }
+        - { sketch: chJitter,      board: teensy40 }
+        - { sketch: chMailbox,     board: teensy40 }
+        - { sketch: chMemPool,     board: teensy40 }
+        - { sketch: chMutex,       board: teensy40 }
+        - { sketch: chRoundRobin,  board: teensy40 }
+        - { sketch: chSemaphore,   board: teensy40 }
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/pio-ci
+      with:
+        src: examples/${{ matrix.example.sketch }}
+        board: ${{ matrix.example.board }}
