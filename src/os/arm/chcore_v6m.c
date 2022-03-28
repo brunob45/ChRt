@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,10 +18,10 @@
 */
 
 /**
- * @file    chcore_v6m.c
- * @brief   ARMv6-M architecture port code.
+ * @file    ARMv6-M/chcore.c
+ * @brief   ARMv6-M port code.
  *
- * @addtogroup ARMCMx_V6M_CORE
+ * @addtogroup ARMV6M_CORE
  * @{
  */
 #ifdef __arm__  // WHG
@@ -121,7 +121,7 @@ void port_init(os_instance_t *oip) {
  *
  * @param[in] lr        value of the @p LR register on ISR entry
  */
-void _port_irq_epilogue(uint32_t lr) {
+void __port_irq_epilogue(uint32_t lr) {
 
   if (lr != 0xFFFFFFF1U) {
     struct port_extctx *ectxp;
@@ -145,12 +145,12 @@ void _port_irq_epilogue(uint32_t lr) {
        required or not.*/
     if (chSchIsPreemptionRequired()) {
       /* Preemption is required we need to enforce a context switch.*/
-      ectxp->pc = (uint32_t)_port_switch_from_isr;
+      ectxp->pc = (uint32_t)__port_switch_from_isr;
     }
     else {
       /* Preemption not required, we just need to exit the exception
          atomically.*/
-      ectxp->pc = (uint32_t)_port_exit_from_isr;
+      ectxp->pc = (uint32_t)__port_exit_from_isr;
     }
 
     /* Note, returning without unlocking is intentional, this is done in

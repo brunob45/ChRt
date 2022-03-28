@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,53 +18,94 @@
 */
 
 /**
- * @file    chcore_v7m.h
- * @brief   ARMv7-M architecture port macros and structures.
+ * @file    ARMv7-M/chcore.h
+ * @brief   ARMv7-M port macros and structures.
  *
- * @addtogroup ARMCMx_V7M_CORE
+ * @addtogroup ARMV7M_CORE
  * @{
  */
 
-#ifndef CHCORE_V7M_H
-#define CHCORE_V7M_H
+#ifndef CHCORE_H
+#define CHCORE_H
+
+/* Inclusion of the Cortex-Mx implementation specific parameters.*/
+#include "cmparams.h"
+#include "mpu.h"
 
 /*===========================================================================*/
 /* Module constants.                                                         */
 /*===========================================================================*/
 
-/**
- * @name    Port Capabilities and Constants
- * @{
- */
-/**
- * @brief   This port supports a realtime counter.
- */
-#define PORT_SUPPORTS_RT                TRUE
+/* The following code is not processed when the file is included from an
+   asm module because those intrinsic macros are not necessarily defined
+   by the assembler too.*/
+#if !defined(_FROM_ASM_)
 
 /**
- * @brief   Natural alignment constant.
- * @note    It is the minimum alignment for pointer-size variables.
+ * @brief   Compiler name and version.
  */
-#define PORT_NATURAL_ALIGN              sizeof (void *)
+#if defined(__GNUC__) || defined(__DOXYGEN__)
+#define PORT_COMPILER_NAME              "GCC " __VERSION__
 
-/**
- * @brief   Stack alignment constant.
- * @note    It is the alignment required for the stack pointer.
- */
-#define PORT_STACK_ALIGN                sizeof (stkalign_t)
+#elif defined(__ICCARM__)
+#define PORT_COMPILER_NAME              "IAR"
 
-/**
- * @brief   Working Areas alignment constant.
- * @note    It is the alignment to be enforced for thread working areas.
- */
-#define PORT_WORKING_AREA_ALIGN         ((PORT_ENABLE_GUARD_PAGES == TRUE) ?\
-                                         32U : PORT_STACK_ALIGN)
+#elif defined(__CC_ARM)
+#define PORT_COMPILER_NAME              "RVCT"
+
+#else
+#error "unsupported compiler"
+#endif
+
+#endif /* !defined(_FROM_ASM_) */
 /** @} */
 
 /**
+ * @name    Priority Ranges
+ * @{
+ */
+/**
  * @brief   Disabled value for BASEPRI register.
  */
-#define CORTEX_BASEPRI_DISABLED         0U
+#define CORTEX_BASEPRI_DISABLED         0
+
+/**
+ * @brief   Total priority levels.
+ */
+#define CORTEX_PRIORITY_LEVELS          (1 << CORTEX_PRIORITY_BITS)
+
+/**
+ * @brief   Minimum priority level.
+ * @details This minimum priority level is calculated from the number of
+ *          priority bits supported by the specific Cortex-Mx implementation.
+ */
+#define CORTEX_MINIMUM_PRIORITY         (CORTEX_PRIORITY_LEVELS - 1)
+
+/**
+ * @brief   Maximum priority level.
+ * @details The maximum allowed priority level is always zero.
+ */
+#define CORTEX_MAXIMUM_PRIORITY         0
+
+/**
+ * @brief   SVCALL handler priority.
+ */
+#define CORTEX_PRIORITY_SVCALL          (CORTEX_MAXIMUM_PRIORITY +          \
+                                         CORTEX_FAST_PRIORITIES)
+
+/**
+ * @brief   PendSV priority level.
+ * @note    This priority is enforced to be equal to
+ *          @p CORTEX_MAX_KERNEL_PRIORITY, this handler always have the
+ *          highest priority that cannot preempt the kernel.
+ */
+#define CORTEX_PRIORITY_PENDSV          CORTEX_MAX_KERNEL_PRIORITY
+
+/**
+ * @brief   Priority level to priority mask conversion macro.
+ */
+#define CORTEX_PRIO_MASK(n)             ((n) << (8 - CORTEX_PRIORITY_BITS))
+/** @} */
 
 /*===========================================================================*/
 /* Module pre-compile time settings.                                         */
@@ -113,12 +154,12 @@
  * @details This size depends on the idle thread implementation, usually
  *          the idle thread should take no more space than those reserved
  *          by @p PORT_INT_REQUIRED_STACK.
- * @note    In this port it is set to 16 because the idle thread does have
+ * @note    In this port it is set to 64 because the idle thread does have
  *          a stack frame when compiling without optimizations. You may
  *          reduce this value to zero when compiling with optimizations.
  */
 #if !defined(PORT_IDLE_THREAD_STACK_SIZE) || defined(__DOXYGEN__)
-#define PORT_IDLE_THREAD_STACK_SIZE     16
+#define PORT_IDLE_THREAD_STACK_SIZE     64
 #endif
 
 /**
@@ -142,6 +183,14 @@
 #endif
 
 /**
+ * @brief   Number of upper priority levels reserved as fast interrupts.
+ * @note    The default reserves priorities 0 and 1 for fast interrupts.
+ */
+#if !defined(CORTEX_FAST_PRIORITIES)
+#define CORTEX_FAST_PRIORITIES          2
+#endif
+
+/**
  * @brief   FPU support in context switch.
  * @details Activating this option activates the FPU support in the kernel.
  */
@@ -155,26 +204,22 @@
 
 /**
  * @brief   Simplified priority handling flag.
- * @details Activating this option makes the Kernel work in compact mode.
- *          In compact mode interrupts are disabled globally instead of
- *          raising the priority mask to some intermediate level.
+ * @details When this option is disabled:
+ *          - Interrupts are not disabled globally, the priority mask BASEPRI
+ *            is raised up to CORTEX_BASEPRI_KERNEL instead.
+ *          - An extra structure @p port_extctx is allocated for each thread
+ *            in order to allow safe processing of fast interrupts.
+ *          .
+ *          When this option is enabled:
+ *          - Interrupts are disabled globally instead of
+ *            raising the priority mask, this makes code generally more
+ *            compact and faster. There is no extra @p port_extctx structure
+ *            so less RAM is used.
+ *          - There is no support for fast interrupts.
+ *          .
  */
 #if !defined(CORTEX_SIMPLIFIED_PRIORITY)
 #define CORTEX_SIMPLIFIED_PRIORITY      FALSE
-#endif
-
-/**
- * @brief   SVCALL handler priority.
- * @note    The default SVCALL handler priority is defaulted to
- *          @p CORTEX_MAXIMUM_PRIORITY+1, this reserves the
- *          @p CORTEX_MAXIMUM_PRIORITY priority level as fast interrupts
- *          priority level.
- */
-#if !defined(CORTEX_PRIORITY_SVCALL)
-#define CORTEX_PRIORITY_SVCALL          (CORTEX_MAXIMUM_PRIORITY + 1U)
-#elif !PORT_IRQ_IS_VALID_PRIORITY(CORTEX_PRIORITY_SVCALL)
-/* If it is externally redefined then better perform a validity check on it.*/
-#error "invalid priority level specified for CORTEX_PRIORITY_SVCALL"
 #endif
 
 /**
@@ -191,30 +236,52 @@
 /*===========================================================================*/
 
 #if (PORT_SWITCHED_REGIONS_NUMBER < 0) || (PORT_SWITCHED_REGIONS_NUMBER > 4)
-#error "invalid PORT_SWITCHED_REGIONS_NUMBER value"
+  #error "invalid PORT_SWITCHED_REGIONS_NUMBER value"
 #endif
 
-#if !defined(_FROM_ASM_)
-/**
- * @brief   MPU guard page size.
- */
-#if (PORT_ENABLE_GUARD_PAGES == TRUE) || defined(__DOXYGEN__)
-  #if CH_DBG_ENABLE_STACK_CHECK == FALSE
-    #error "PORT_ENABLE_GUARD_PAGES requires CH_DBG_ENABLE_STACK_CHECK"
-  #endif
-  #if __MPU_PRESENT == 0
-    #error "MPU not present in current device"
-  #endif
-  #define PORT_GUARD_PAGE_SIZE          32U
-#else
-  #define PORT_GUARD_PAGE_SIZE          0U
+#if (CORTEX_FAST_PRIORITIES < 0) ||                                         \
+    (CORTEX_FAST_PRIORITIES > (CORTEX_PRIORITY_LEVELS / 4))
+#error "invalid CORTEX_FAST_PRIORITIES value specified"
 #endif
-#endif /* !defined(_FROM_ASM_) */
 
 /**
- * @name    Architecture and Compiler
+ * @name    Port Capabilities and Constants
  * @{
  */
+/**
+ * @brief   This port supports a realtime counter.
+ */
+#define PORT_SUPPORTS_RT                TRUE
+
+/**
+ * @brief   Natural alignment constant.
+ * @note    It is the minimum alignment for pointer-size variables.
+ */
+#define PORT_NATURAL_ALIGN              sizeof (void *)
+
+/**
+ * @brief   Stack alignment constant.
+ * @note    It is the alignment required for the stack pointer.
+ */
+#define PORT_STACK_ALIGN                sizeof (stkalign_t)
+
+/**
+ * @brief   Working Areas alignment constant.
+ * @note    It is the alignment to be enforced for thread working areas.
+ */
+#define PORT_WORKING_AREA_ALIGN         ((PORT_ENABLE_GUARD_PAGES == TRUE) ?\
+                                         32U : PORT_STACK_ALIGN)
+/** @} */
+
+/**
+ * @name    Architecture
+ * @{
+ */
+/**
+ * @brief   Macro defining a generic ARM architecture.
+ */
+#define PORT_ARCHITECTURE_ARM
+
 #if (CORTEX_MODEL == 3) || defined(__DOXYGEN__)
 
   #if !defined(CH_CUSTOMER_LIC_PORT_CM3)
@@ -225,24 +292,24 @@
     #error "ChibiOS Cortex-M3 port not licensed"
   #endif
 
-/**
- * @brief   Macro defining the specific ARM architecture.
- */
-#define PORT_ARCHITECTURE_ARM_v7M
+  /**
+   * @brief   Macro defining the specific ARM architecture.
+   */
+  #define PORT_ARCHITECTURE_ARM_V7M
 
-/**
- * @brief   Name of the implemented architecture.
- */
-#define PORT_ARCHITECTURE_NAME          "ARMv7-M"
+  /**
+   * @brief   Name of the implemented architecture.
+   */
+  #define PORT_ARCHITECTURE_NAME        "ARMv7-M"
 
-/**
- * @brief   Name of the architecture variant.
- */
-#if (PORT_ENABLE_GUARD_PAGES == FALSE) || defined(__DOXYGEN__)
-  #define PORT_CORE_VARIANT_NAME        "Cortex-M3"
-#else
-  #define PORT_CORE_VARIANT_NAME        "Cortex-M3 (MPU)"
-#endif
+  /**
+   * @brief   Name of the architecture variant.
+   */
+  #if (PORT_ENABLE_GUARD_PAGES == FALSE) || defined(__DOXYGEN__)
+    #define PORT_CORE_VARIANT_NAME      "Cortex-M3"
+  #else
+    #define PORT_CORE_VARIANT_NAME      "Cortex-M3 (MPU)"
+  #endif
 
 #elif (CORTEX_MODEL == 4)
 
@@ -251,7 +318,7 @@
   #endif
 
   #if CH_CUSTOMER_LIC_PORT_CM4 == FALSE
-  #error "ChibiOS Cortex-M4 port not licensed"
+    #error "ChibiOS Cortex-M4 port not licensed"
   #endif
 
   #define PORT_ARCHITECTURE_ARM_v7ME
@@ -280,7 +347,7 @@
     #error "ChibiOS Cortex-M7 port not licensed"
   #endif
 
-#define PORT_ARCHITECTURE_ARM_v7ME
+  #define PORT_ARCHITECTURE_ARM_v7ME
   #define PORT_ARCHITECTURE_NAME        "ARMv7E-M"
   #if CORTEX_USE_FPU
     #if PORT_ENABLE_GUARD_PAGES == FALSE
@@ -295,53 +362,72 @@
       #define PORT_CORE_VARIANT_NAME    "Cortex-M7 (MPU)"
     #endif
   #endif
+
+#else
+  #error "unknown ARMv7-M variant"
 #endif
 
 /**
  * @brief   Port-specific information string.
  */
 #if (CORTEX_SIMPLIFIED_PRIORITY == FALSE) || defined(__DOXYGEN__)
-#define PORT_INFO                       "Advanced kernel mode"
+  #define PORT_INFO                     "Advanced kernel mode"
 #else
-#define PORT_INFO                       "Compact kernel mode"
+  #define PORT_INFO                     "Compact kernel mode"
 #endif
 /** @} */
 
 #if (CORTEX_SIMPLIFIED_PRIORITY == FALSE) || defined(__DOXYGEN__)
-/**
- * @brief   Maximum usable priority for normal ISRs.
- */
-#define CORTEX_MAX_KERNEL_PRIORITY      (CORTEX_PRIORITY_SVCALL + 1U)
+  /**
+   * @brief   Maximum usable priority for normal ISRs.
+   */
+  #define CORTEX_MAX_KERNEL_PRIORITY    (CORTEX_PRIORITY_SVCALL + 1)
 
-/**
- * @brief   BASEPRI level within kernel lock.
- */
-#define CORTEX_BASEPRI_KERNEL                                               \
-  CORTEX_PRIO_MASK(CORTEX_MAX_KERNEL_PRIORITY)
+  /**
+   * @brief   Minimum usable priority for normal ISRs.
+   */
+  #define CORTEX_MIN_KERNEL_PRIORITY    (CORTEX_PRIORITY_LEVELS - 1)
+
+  /**
+   * @brief   BASEPRI level within kernel lock.
+   */
+  #define CORTEX_BASEPRI_KERNEL                                             \
+    CORTEX_PRIO_MASK(CORTEX_MAX_KERNEL_PRIORITY)
+
 #else
-
-#define CORTEX_MAX_KERNEL_PRIORITY      0U
+  #define CORTEX_MAX_KERNEL_PRIORITY    0
+  #define CORTEX_MIN_KERNEL_PRIORITY    (CORTEX_PRIORITY_LEVELS - 1)
 #endif
-
-/**
- * @brief   PendSV priority level.
- * @note    This priority is enforced to be equal to
- *          @p CORTEX_MAX_KERNEL_PRIORITY, this handler always have the
- *          highest priority that cannot preempt the kernel.
- */
-#define CORTEX_PRIORITY_PENDSV          CORTEX_MAX_KERNEL_PRIORITY
-
-/*===========================================================================*/
-/* Module data structures and types.                                         */
-/*===========================================================================*/
 
 /* The following code is not processed when the file is included from an
    asm module.*/
 #if !defined(_FROM_ASM_)
 
-/* The documentation of the following declarations is in chconf.h in order
-   to not have duplicated structure names into the documentation.*/
-#if !defined(__DOXYGEN__)
+/**
+ * @brief   MPU guard page size.
+ */
+#if (PORT_ENABLE_GUARD_PAGES == TRUE) || defined(__DOXYGEN__)
+  #if CH_DBG_ENABLE_STACK_CHECK == FALSE
+    #error "PORT_ENABLE_GUARD_PAGES requires CH_DBG_ENABLE_STACK_CHECK"
+  #endif
+  #if __MPU_PRESENT == 0
+    #error "MPU not present in current device"
+  #endif
+  #define PORT_GUARD_PAGE_SIZE          32U
+#else
+  #define PORT_GUARD_PAGE_SIZE          0U
+#endif
+
+/*===========================================================================*/
+/* Module data structures and types.                                         */
+/*===========================================================================*/
+
+/**
+ * @brief   Interrupt saved context.
+ * @details This structure represents the stack frame saved during a
+ *          preemption-capable interrupt handler.
+ * @note    It is implemented to match the Cortex-Mx exception context.
+ */
 struct port_extctx {
   uint32_t      r0;
   uint32_t      r1;
@@ -386,6 +472,11 @@ struct port_linkctx {
 };
 #endif
 
+/**
+ * @brief   System saved context.
+ * @details This structure represents the inner stack frame during a context
+ *          switch.
+ */
 struct port_intctx {
 #if (PORT_SWITCHED_REGIONS_NUMBER > 0) || defined(__DOXYGEN__)
   struct {
@@ -422,6 +513,12 @@ struct port_intctx {
   uint32_t      lr;
 };
 
+/**
+ * @brief   Platform dependent part of the @p thread_t structure.
+ * @details In this port the structure just holds a pointer to the
+ *          @p port_intctx structure representing the stack pointer
+ *          at context switch time.
+ */
 struct port_context {
   struct port_intctx    *sp;
 #if (PORT_USE_SYSCALL == TRUE) || defined(__DOXYGEN__)
@@ -431,53 +528,77 @@ struct port_context {
   } syscall;
 #endif
 };
-#endif /* !defined(__DOXYGEN__) */
+
+#endif /* !defined(_FROM_ASM_) */
 
 /*===========================================================================*/
 /* Module macros.                                                            */
 /*===========================================================================*/
 
+/**
+ * @brief   Priority level verification macro.
+ */
+#define PORT_IRQ_IS_VALID_PRIORITY(n)                                       \
+  (((n) >= 0U) && ((n) < CORTEX_PRIORITY_LEVELS))
+
+/**
+ * @brief   Priority level verification macro.
+ */
+#define PORT_IRQ_IS_VALID_KERNEL_PRIORITY(n)                                \
+  (((n) >= CORTEX_MAX_KERNEL_PRIORITY) && ((n) <= CORTEX_MIN_KERNEL_PRIORITY))
+
+/**
+ * @brief   Optimized thread function declaration macro.
+ */
+#define PORT_THD_FUNCTION(tname, arg) void tname(void *arg)
+
 /* By default threads have no syscall context information.*/
 #if (PORT_USE_SYSCALL == TRUE) || defined(__DOXYGEN__)
-#define __PORT_SETUP_CONTEXT_SYSCALL(tp, wtop)                              \
-  (tp)->ctx.syscall.psp = (uint32_t)(wtop);                                 \
-  (tp)->ctx.syscall.p   = NULL;
+  #define __PORT_SETUP_CONTEXT_SYSCALL(tp, wtop)                            \
+    (tp)->ctx.syscall.psp = (uint32_t)(wtop);                               \
+    (tp)->ctx.syscall.p   = NULL;
 #else
-#define __PORT_SETUP_CONTEXT_SYSCALL(tp, wtop)
+  #define __PORT_SETUP_CONTEXT_SYSCALL(tp, wtop)
 #endif
 
 /* By default threads have all regions disabled.*/
 #if (PORT_SWITCHED_REGIONS_NUMBER == 0) || defined(__DOXYGEN__)
-#define __PORT_SETUP_CONTEXT_MPU(tp)
+  #define __PORT_SETUP_CONTEXT_MPU(tp)
+
 #elif (PORT_SWITCHED_REGIONS_NUMBER == 1) || defined(__DOXYGEN__)
-#define __PORT_SETUP_CONTEXT_MPU(tp)                                        \
-  (tp)->ctx.sp->regions[0].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[0].rasr  = 0U
+  #define __PORT_SETUP_CONTEXT_MPU(tp)                                      \
+    (tp)->ctx.sp->regions[0].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[0].rasr  = 0U
+
 #elif (PORT_SWITCHED_REGIONS_NUMBER == 2) || defined(__DOXYGEN__)
-#define __PORT_SETUP_CONTEXT_MPU(tp)                                        \
-  (tp)->ctx.sp->regions[0].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[0].rasr  = 0U;                                      \
-  (tp)->ctx.sp->regions[1].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[1].rasr  = 0U
+  #define __PORT_SETUP_CONTEXT_MPU(tp)                                      \
+    (tp)->ctx.sp->regions[0].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[0].rasr  = 0U;                                    \
+    (tp)->ctx.sp->regions[1].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[1].rasr  = 0U
+
 #elif (PORT_SWITCHED_REGIONS_NUMBER == 3) || defined(__DOXYGEN__)
-#define __PORT_SETUP_CONTEXT_MPU(tp)                                        \
-  (tp)->ctx.sp->regions[0].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[0].rasr  = 0U;                                      \
-  (tp)->ctx.sp->regions[1].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[1].rasr  = 0U;                                      \
-  (tp)->ctx.sp->regions[2].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[2].rasr  = 0U
+  #define __PORT_SETUP_CONTEXT_MPU(tp)                                      \
+    (tp)->ctx.sp->regions[0].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[0].rasr  = 0U;                                    \
+    (tp)->ctx.sp->regions[1].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[1].rasr  = 0U;                                    \
+    (tp)->ctx.sp->regions[2].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[2].rasr  = 0U
+
 #elif (PORT_SWITCHED_REGIONS_NUMBER == 4) || defined(__DOXYGEN__)
-#define __PORT_SETUP_CONTEXT_MPU(tp)                                        \
-  (tp)->ctx.sp->regions[0].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[0].rasr  = 0U;                                      \
-  (tp)->ctx.sp->regions[1].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[1].rasr  = 0U;                                      \
-  (tp)->ctx.sp->regions[2].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[2].rasr  = 0U;                                      \
-  (tp)->ctx.sp->regions[3].rbar  = 0U;                                      \
-  (tp)->ctx.sp->regions[3].rasr  = 0U
+  #define __PORT_SETUP_CONTEXT_MPU(tp)                                      \
+    (tp)->ctx.sp->regions[0].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[0].rasr  = 0U;                                    \
+    (tp)->ctx.sp->regions[1].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[1].rasr  = 0U;                                    \
+    (tp)->ctx.sp->regions[2].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[2].rasr  = 0U;                                    \
+    (tp)->ctx.sp->regions[3].rbar  = 0U;                                    \
+    (tp)->ctx.sp->regions[3].rasr  = 0U
+
 #else
+  /* Note, checked above.*/
 #endif
 
 /**
@@ -485,25 +606,34 @@ struct port_context {
  * @details This code usually setup the context switching frame represented
  *          by an @p port_intctx structure.
  */
-#define PORT_SETUP_CONTEXT(tp, wbase, wtop, pf, arg) {                      \
-  (tp)->ctx.sp = (struct port_intctx *)((uint8_t *)(wtop) -                 \
-                                        sizeof (struct port_intctx));       \
+#define PORT_SETUP_CONTEXT(tp, wbase, wtop, pf, arg) do {                   \
+  (tp)->ctx.sp = (struct port_intctx *)(void *)								\
+  	  	  	  	   ((uint8_t *)(wtop) - sizeof (struct port_intctx));       \
   (tp)->ctx.sp->r4 = (uint32_t)(pf);                                        \
   (tp)->ctx.sp->r5 = (uint32_t)(arg);                                       \
-  (tp)->ctx.sp->lr = (uint32_t)_port_thread_start;                          \
+  (tp)->ctx.sp->lr = (uint32_t)__port_thread_start;                         \
   __PORT_SETUP_CONTEXT_MPU(tp);                                             \
   __PORT_SETUP_CONTEXT_SYSCALL(tp, wtop);                                   \
-}
+} while (false)
 
-//  __PORT_SETUP_CONTEXT_MPU(tp)
+/**
+ * @brief   Context switch area size.
+ */
+#if (CORTEX_SIMPLIFIED_PRIORITY == TRUE) || defined(__DOXYGEN__)
+#define PORT_WA_CTX_SIZE (sizeof (struct port_intctx) +                     \
+                          sizeof (struct port_extctx))
+#else
+#define PORT_WA_CTX_SIZE (sizeof (struct port_intctx) +                     \
+                          sizeof (struct port_extctx) +                     \
+                          sizeof (struct port_extctx))
+#endif
 
 /**
  * @brief   Computes the thread working area global size.
  * @note    There is no need to perform alignments in this macro.
  */
 #define PORT_WA_SIZE(n) ((size_t)PORT_GUARD_PAGE_SIZE +                     \
-                         sizeof (struct port_intctx) +                      \
-                         sizeof (struct port_extctx) +                      \
+                         (size_t)PORT_WA_CTX_SIZE +                         \
                          (size_t)(n) +                                      \
                          (size_t)PORT_INT_REQUIRED_STACK)
 
@@ -516,11 +646,12 @@ struct port_context {
  * @param[in] n         the stack size to be assigned to the thread
  */
 #if (PORT_ENABLE_GUARD_PAGES == FALSE) || defined(__DOXYGEN__)
-#define PORT_WORKING_AREA(s, n)                                             \
-  stkalign_t s[THD_WORKING_AREA_SIZE(n) / sizeof (stkalign_t)]
+  #define PORT_WORKING_AREA(s, n)                                           \
+    stkalign_t s[THD_WORKING_AREA_SIZE(n) / sizeof (stkalign_t)]
+
 #else
-#define PORT_WORKING_AREA(s, n)                                             \
-  ALIGNED_VAR(32) stkalign_t s[THD_WORKING_AREA_SIZE(n) / sizeof (stkalign_t)]
+  #define PORT_WORKING_AREA(s, n)                                           \
+    ALIGNED_VAR(32) stkalign_t s[THD_WORKING_AREA_SIZE(n) / sizeof (stkalign_t)]
 #endif
 
 /**
@@ -535,7 +666,7 @@ struct port_context {
  * @details This macro must be inserted at the end of all IRQ handlers
  *          enabled to invoke system APIs.
  */
-#define PORT_IRQ_EPILOGUE() _port_irq_epilogue()
+#define PORT_IRQ_EPILOGUE() __port_irq_epilogue()
 
 /**
  * @brief   IRQ handler function declaration.
@@ -543,9 +674,10 @@ struct port_context {
  *          port implementation.
  */
 #ifdef __cplusplus
-#define PORT_IRQ_HANDLER(id) extern "C" void id(void)
+  #define PORT_IRQ_HANDLER(id) extern "C" void id(void)
+
 #else
-#define PORT_IRQ_HANDLER(id) void id(void)
+  #define PORT_IRQ_HANDLER(id) void id(void)
 #endif
 
 /**
@@ -554,9 +686,10 @@ struct port_context {
  *          port implementation.
  */
 #ifdef __cplusplus
-#define PORT_FAST_IRQ_HANDLER(id) extern "C" void id(void)
+  #define PORT_FAST_IRQ_HANDLER(id) extern "C" void id(void)
+
 #else
-#define PORT_FAST_IRQ_HANDLER(id) void id(void)
+  #define PORT_FAST_IRQ_HANDLER(id) void id(void)
 #endif
 
 /**
@@ -570,40 +703,44 @@ struct port_context {
  * @param[in] otp       the thread to be switched out
  */
 #if (CH_DBG_ENABLE_STACK_CHECK == FALSE) || defined(__DOXYGEN__)
-#define port_switch(ntp, otp) _port_switch(ntp, otp)
+  #define port_switch(ntp, otp) __port_switch(ntp, otp)
+
 #else
-#if PORT_ENABLE_GUARD_PAGES == FALSE
-#define port_switch(ntp, otp) {                                             \
-  struct port_intctx *r13 = (struct port_intctx *)__get_PSP();              \
-  if ((stkalign_t *)(r13 - 1) < (otp)->wabase) {                            \
-    chSysHalt("stack overflow");                                            \
-  }                                                                         \
-  _port_switch(ntp, otp);                                                   \
-}
-#else
-#define port_switch(ntp, otp) {                                             \
-  _port_switch(ntp, otp);                                                   \
+  #if PORT_ENABLE_GUARD_PAGES == FALSE
+    #define port_switch(ntp, otp) do {                                      \
+      struct port_intctx *r13 = (struct port_intctx *)__get_PSP();          \
+      if ((stkalign_t *)(void *)(r13 - 1) < (otp)->wabase) {                \
+        chSysHalt("stack overflow");                                        \
+      }                                                                     \
+      __port_switch(ntp, otp);                                              \
+    } while (false)
+
+  #else
+    #define port_switch(ntp, otp) do {                                      \
+      __port_switch(ntp, otp);                                              \
                                                                             \
-  /* Setting up the guard page for the switched-in thread.*/                \
-  mpuSetRegionAddress(PORT_USE_GUARD_MPU_REGION,                            \
-                      chThdGetSelfX()->wabase);                             \
-}
-#endif
+      /* Setting up the guard page for the switched-in thread.*/            \
+      mpuSetRegionAddress(PORT_USE_GUARD_MPU_REGION,                        \
+                          chThdGetSelfX()->wabase);                         \
+    } while (false)
+  #endif
 #endif
 
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/
 
+#if !defined(_FROM_ASM_)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
   void port_init(os_instance_t *oip);
-  void _port_irq_epilogue(void);
-  void _port_switch(thread_t *ntp, thread_t *otp);
-  void _port_thread_start(void);
-  void _port_switch_from_isr(void);
-  void _port_exit_from_isr(void);
+  void __port_irq_epilogue(void);
+  void __port_switch(thread_t *ntp, thread_t *otp);
+  void __port_thread_start(void);
+  void __port_switch_from_isr(void);
+  void __port_exit_from_isr(void);
 #if PORT_USE_SYSCALL == TRUE
   void port_unprivileged_jump(uint32_t pc, uint32_t psp);
 #endif
@@ -785,6 +922,18 @@ __STATIC_FORCEINLINE rtcnt_t port_rt_get_counter_value(void) {
 
 #endif /* !defined(_FROM_ASM_) */
 
-#endif /* CHCORE_V7M_H */
+/*===========================================================================*/
+/* Module late inclusions.                                                   */
+/*===========================================================================*/
+
+#if !defined(_FROM_ASM_)
+
+#if CH_CFG_ST_TIMEDELTA > 0
+#include "chcore_timer.h"
+#endif /* CH_CFG_ST_TIMEDELTA > 0 */
+
+#endif /* !defined(_FROM_ASM_) */
+
+#endif /* CHCORE_H */
 
 /** @} */

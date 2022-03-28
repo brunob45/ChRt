@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,10 +18,10 @@
 */
 
 /**
- * @file    compilers/GCC/chcoreasm_v6m.S
- * @brief   ARMv6-M architecture port low level code.
+ * @file    ARMv6-M/compilers/GCC/chcoreasm.S
+ * @brief   ARMv6-M port low level code.
  *
- * @addtogroup ARMCMx_GCC_CORE
+ * @addtogroup ARMV6M_GCC_CORE
  * @{
  */
 
@@ -47,8 +47,10 @@
  */
 #if defined(_CHIBIOS_RT_CONF_)
 #define CONTEXT_OFFSET  12
+
 #elif defined(_CHIBIOS_NIL_CONF_)
 #define CONTEXT_OFFSET  0
+
 #else
 #error "invalid chconf.h"
 #endif
@@ -67,8 +69,8 @@
  * Performs a context switch between two threads.
  *--------------------------------------------------------------------------*/
                 .thumb_func
-                .globl  _port_switch
-_port_switch:
+                .globl  __port_switch
+__port_switch:
                 push    {r4, r5, r6, r7, lr}
                 mov     r4, r8
                 mov     r5, r9
@@ -97,20 +99,20 @@ _port_switch:
  * called on thread function return.
  *--------------------------------------------------------------------------*/
                 .thumb_func
-                .globl  _port_thread_start
-_port_thread_start:
+                .globl  __port_thread_start
+__port_thread_start:
 #if CH_DBG_SYSTEM_STATE_CHECK
                 bl      __dbg_check_unlock
 #endif
 #if CH_DBG_STATISTICS
-                bl      _stats_stop_measure_crit_thd
+                bl      __stats_stop_measure_crit_thd
 #endif
                 cpsie   i
                 mov     r0, r5
                 blx     r4
                 movs    r0, #0              /* MSG_OK */
                 bl      chThdExit
-_zombies:       b       _zombies
+.zombies:       b       .zombies
 
 /*--------------------------------------------------------------------------*
  * Post-IRQ switch code.
@@ -118,10 +120,10 @@ _zombies:       b       _zombies
  * Exception handlers return here for context switching.
  *--------------------------------------------------------------------------*/
                 .thumb_func
-                .globl  _port_switch_from_isr
-_port_switch_from_isr:
+                .globl  __port_switch_from_isr
+__port_switch_from_isr:
 #if CH_DBG_STATISTICS
-                bl      _stats_start_measure_crit_thd
+                bl      __stats_start_measure_crit_thd
 #endif
 #if CH_DBG_SYSTEM_STATE_CHECK
                 bl      __dbg_check_lock
@@ -131,10 +133,10 @@ _port_switch_from_isr:
                 bl      __dbg_check_unlock
 #endif
 #if CH_DBG_STATISTICS
-                bl      _stats_stop_measure_crit_thd
+                bl      __stats_stop_measure_crit_thd
 #endif
-                .globl  _port_exit_from_isr
-_port_exit_from_isr:
+                .globl  __port_exit_from_isr
+__port_exit_from_isr:
                 ldr     r2, .L2
                 ldr     r3, .L3
                 str     r3, [r2, #0]
