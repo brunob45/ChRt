@@ -1,0 +1,36 @@
+name: PlatformIO CI
+description: pio ci command is conceived of as “hot key” for building project with arbitrary source code structure.
+inputs:
+  src:
+    description: Specify the path to a sketch.
+    required: true
+  board:
+    description: Build project with automatically pre-generated environments based on board settings.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: ${{ runner.os }}-pip-
+    - name: Cache PlatformIO
+      uses: actions/cache@v3
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+    - name: Set up Python
+      uses: actions/setup-python@v3
+    - name: Install PlatformIO
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade platformio
+    - name: Run PlatformIO CI
+      shell: bash
+      run: pio ci --lib="." --board=${{ inputs.board }}
+      env:
+        PLATFORMIO_CI_SRC: ${{ inputs.src }}
