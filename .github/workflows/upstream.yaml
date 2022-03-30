@@ -5,7 +5,7 @@ on:
     branches:
     - dev2
   schedule:
-    cron: '12 12 * * 1' # Every monday at 12:12 PM
+    - cron: '12 12 * * 1' # Every monday at 12:12 PM
 
 jobs:
   checkout:
