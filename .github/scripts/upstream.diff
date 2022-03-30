@@ -114,6 +114,43 @@ index 7a87c47..082e19e 100644
 -
 +#endif  // _AVR_ WHG
  /** @} */
+diff --git a/src/os/license/chversion.h b/src/os/license/chversion.h
+index bdaa075..352f052 100644
+--- a/src/os/license/chversion.h
++++ b/src/os/license/chversion.h
+@@ -51,27 +51,27 @@
+ /**
+  * @brief   ChibiOS version string.
+  */
+-#define CH_VERSION              "2012.1.0"
++#define CH_VERSION              "2021.11.1"
+ 
+ /**
+  * @brief   ChibiOS version release year.
+  */
+-#define CH_VERSION_YEAR         12
++#define CH_VERSION_YEAR         21
+ 
+ /**
+  * @brief   ChibiOS version release month.
+  */
+-#define CH_VERSION_MONTH        1
++#define CH_VERSION_MONTH        11
+ 
+ /**
+  * @brief   ChibiOS version patch number.
+  */
+-#define CH_VERSION_PATCH        0
++#define CH_VERSION_PATCH        1
+ 
+ /**
+  * @brief   ChibiOS version nickname.
+  */
+-#define CH_VERSION_NICKNAME     "Lasagna"
++#define CH_VERSION_NICKNAME     "Nocelle"
+ /** @} */
+ 
+ /*===========================================================================*/
 diff --git a/src/os/rt/src/chthreads.c b/src/os/rt/src/chthreads.c
 index 04b3e63..7dfefb0 100644
 --- a/src/os/rt/src/chthreads.c

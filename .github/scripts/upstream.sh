@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# In ../ChibiOS, run 
+#  svn checkout http://svn.osdn.net/svnroot/chibios/trunk/os/
+# In .., run 
+#  git clone git clone https://github.com/ARM-software/CMSIS_5 --depth 1
+
 rm -r src/os/*
 cp -r ../ChibiOS/os/rt src/os/rt
 cp -r ../ChibiOS/os/oslib src/os/oslib
