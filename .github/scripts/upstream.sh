@@ -33,4 +33,4 @@ cp ../ChibiOS/os/common/ports/ARMv6-M/compilers/GCC/chcoreasm.S src/os/arm/chcor
 cp ../ChibiOS/os/common/ports/ARMv7-M/compilers/GCC/chcoreasm.S src/os/arm/chcoreasm_v7m.S
 
 # Patch ports
-git apply upstream.diff
+git apply .github/scripts/upstream.diff
