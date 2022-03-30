@@ -14,19 +14,21 @@ jobs:
     - uses: actions/checkout@v3
       with:
         ref: upstream
-    - uses: actions/checkout@v3
+    - name: Checkout ChibiOS
+      uses: actions/checkout@v3
       with:
         repository: 'ChibiOS/ChibiOS'
-        path: '../'
-    - uses: actions/checkout@v3
+        path: 'ChibiOS'
+    - name: Checkout CMSIS_5
+      uses: actions/checkout@v3
       with:
         repository: 'ARM-software/CMSIS_5'
-        path: '../CMSIS_5'
+        path: 'CMSIS_5'
     - name: Run checkout script
       run: |
         bash .github/scripts/upstream.sh
     - name: Push branch
       run: |
-        git add .
+        git add src
         git commit -m "$(date)"
         git push
