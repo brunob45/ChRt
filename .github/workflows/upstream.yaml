@@ -24,6 +24,7 @@ jobs:
         path: 'CMSIS_5'
     - name: Run checkout script
       run: |
+        echo "$(pwd)"
         bash .github/scripts/upstream.sh
     - name: Push branch
       run: |
