@@ -1,0 +1,32 @@
+name: Checkout upstream
+
+on:
+  push:
+    branches:
+    - dev2
+  schedule:
+    cron: '12 12 * * 1' # Every monday at 12:12 PM
+
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: upstream
+    - uses: actions/checkout@v3
+      with:
+        repository: 'ChibiOS/ChibiOS'
+        path: 'ChibiOS'
+    - uses: actions/checkout@v3
+      with:
+        repository: 'ARM-software/CMSIS_5'
+        path: 'CMSIS_5'
+    - name: Run checkout script
+      run: |
+        bash .github/scripts/upstream.sh
+    - name: Push branch
+      run: |
+        git add .
+        git commit -m "$(date)"
+        git push
