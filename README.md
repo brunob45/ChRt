@@ -1,5 +1,7 @@
 #### ChRt - ChibiOS/RT Arduino Library
 
+[![PlatformIO CI](https://github.com/brunob45/ChRt/actions/workflows/compile.yaml/badge.svg)](https://github.com/brunob45/ChRt/actions/workflows/compile.yaml)
+
 This is a version of ChibiOS for Arduino.
 I am starting a new repository since this version is not backward
 compatible with the previous libraries. Both AVR and ARM are now in
