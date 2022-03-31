@@ -8,17 +8,20 @@ jobs:
     strategy:
       matrix:
         example:
-        - { sketch: chBlink, board: zero }
-        - { sketch: chBlink, board: uno }
-        - { sketch: chBlink, board: due }
-        - { sketch: chBlink, board: teensy2 }
-        - { sketch: chBlink, board: teensy2pp }
-        - { sketch: chBlink, board: teensy30 }
-        - { sketch: chBlink, board: teensy31 }
-        - { sketch: chBlink, board: teensy35 }
-        - { sketch: chBlink, board: teensy36 }
-        - { sketch: chBlink, board: teensy40 }
-        - { sketch: chBlink, board: teensy41 }
+        - { sketch: chBlink, board: zero }      # SAMD21G18A
+        - { sketch: chBlink, board: uno }       # ATMEGA328P
+        - { sketch: chBlink, board: due }       # AT91SAM3X8E
+        - { sketch: chBlink, board: nano_every } # ATMEGA4809
+        - { sketch: chBlink, board: megaatmega2560 } # ATMEGA2560
+
+        - { sketch: chBlink, board: teensy2 }   # ATMEGA32U4
+        - { sketch: chBlink, board: teensy2pp } # AT90USB1286
+        - { sketch: chBlink, board: teensy30 }  # MK20DX128
+        - { sketch: chBlink, board: teensy31 }  # MK20DX256
+        - { sketch: chBlink, board: teensy35 }  # MK64FX512
+        - { sketch: chBlink, board: teensy36 }  # MK66FX1M0
+        - { sketch: chBlink, board: teensy40 }  # IMXRT1062
+        # - { sketch: chBlink, board: teensy41 }  # IMXRT1062
 
         - { sketch: chBlinkPrint,  board: teensy40 }
         - { sketch: chContextTime, board: teensy40 }
@@ -26,7 +29,7 @@ jobs:
         - { sketch: chDataSharing, board: teensy40 }
         - { sketch: chEvent,       board: teensy40 }
         # - { sketch: chFifoDataLogger,board: teensy40 }
-        - { sketch: chIsrSemaphore,board: teensy40 }
+        - { sketch: chIsrSemaphore, board: teensy40 }
         - { sketch: chJitter,      board: teensy40 }
         - { sketch: chMailbox,     board: teensy40 }
         - { sketch: chMemPool,     board: teensy40 }
