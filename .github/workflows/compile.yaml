@@ -1,6 +1,11 @@
 name: PlatformIO CI
 
-on: [pull_request, repository_dispatch]
+on:
+  pull_request:
+  repository_dispatch:
+  push:
+    branches:
+      - master 
 
 jobs:
   build:
