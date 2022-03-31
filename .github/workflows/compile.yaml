@@ -16,7 +16,7 @@ jobs:
         - { sketch: chBlink, board: zero }      # SAMD21G18A
         - { sketch: chBlink, board: uno }       # ATMEGA328P
         - { sketch: chBlink, board: due }       # AT91SAM3X8E
-        - { sketch: chBlink, board: nano_every } # ATMEGA4809
+        # - { sketch: chBlink, board: nano_every } # ATMEGA4809
         - { sketch: chBlink, board: megaatmega2560 } # ATMEGA2560
 
         - { sketch: chBlink, board: teensy2 }   # ATMEGA32U4
