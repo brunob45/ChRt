@@ -42,7 +42,7 @@
 /**
  * @brief   Stable release flag.
  */
-#define CH_VERSION_STABLE       0
+#define CH_VERSION_STABLE       1
 
 /**
  * @name    ChibiOS version identification

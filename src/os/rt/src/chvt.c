@@ -26,19 +26,11 @@
  * @{
  */
 
-#include <string.h>
-
 #include "ch.h"
 
 /*===========================================================================*/
 /* Module local definitions.                                                 */
 /*===========================================================================*/
-
-#if CH_CFG_INTERVALS_SIZE > CH_CFG_ST_RESOLUTION
-#define VT_MAX_DELAY                                                        \
-  (((sysinterval_t)TIME_MAX_SYSTIME) &                                      \
-   ~(sysinterval_t)(((sysinterval_t)1 << (CH_CFG_ST_RESOLUTION / 2)) - (sysinterval_t)1))
-#endif
 
 /*===========================================================================*/
 /* Module exported variables.                                                */
@@ -78,10 +70,10 @@ static void vt_set_alarm(systime_t now, sysinterval_t delay) {
     delay = currdelta;
   }
 #if CH_CFG_INTERVALS_SIZE > CH_CFG_ST_RESOLUTION
-  else if (delay > VT_MAX_DELAY) {
+  else if (delay > (sysinterval_t)TIME_MAX_SYSTIME) {
     /* The delta could be too large for the physical timer to handle
        this can happen when: sizeof (systime_t) < sizeof (sysinterval_t).*/
-    delay = VT_MAX_DELAY;
+    delay = (sysinterval_t)TIME_MAX_SYSTIME;
   }
 #endif
 
@@ -150,10 +142,10 @@ static void vt_insert_first(virtual_timers_list_t *vtlp,
     delay = currdelta;
   }
 #if CH_CFG_INTERVALS_SIZE > CH_CFG_ST_RESOLUTION
-  else if (delay > VT_MAX_DELAY) {
+  else if (delay > (sysinterval_t)TIME_MAX_SYSTIME) {
     /* The delta could be too large for the physical timer to handle
        this can happen when: sizeof (systime_t) < sizeof (sysinterval_t).*/
-    delay = VT_MAX_DELAY;
+    delay = (sysinterval_t)TIME_MAX_SYSTIME;
   }
 #endif
 
@@ -249,54 +241,13 @@ static void vt_enqueue(virtual_timers_list_t *vtlp,
 /*===========================================================================*/
 
 /**
- * @brief   Initializes a @p virtual_timer_t object.
- * @note    Initializing a timer object is not strictly required because
- *          the function @p chVTSetI() initializes the object too. This
- *          function is only useful if you need to perform a @p chVTIsArmed()
- *          check before calling @p chVTSetI().
- *
- * @param[out] vtp      pointer to a @p virtual_timer_t structure
- *
- * @init
- */
-void chVTObjectInit(virtual_timer_t *vtp) {
-
-  vtp->dlist.next = NULL;
-}
-
-/**
- * @brief   Disposes a virtual timer.
- * @note    Objects disposing does not involve freeing memory but just
- *          performing checks that make sure that the object is in a
- *          state compatible with operations stop.
- * @note    If the option @p CH_CFG_HARDENING_LEVEL is greater than zero then
- *          the object is also cleared, attempts to use the object would likely
- *          result in a clean memory access violation because dereferencing
- *          of @p NULL pointers rather than dereferencing previously valid
- *          pointers.
- *
- * @param[in] vtp       pointer to a @p virtual_timer_t structure
- *
- * @dispose
- */
-void chVTObjectDispose(virtual_timer_t *vtp) {
-
-  chDbgCheck(vtp != NULL);
-  chDbgAssert(vtp->dlist.next != NULL, "object in use");
-
-#if CH_CFG_HARDENING_LEVEL > 0
-  memset((void *)vtp, 0, sizeof (virtual_timer_t));
-#endif
-}
-
-/**
  * @brief   Enables a one-shot virtual timer.
  * @details The timer is enabled and programmed to trigger after the delay
  *          specified as parameter.
  * @pre     The timer must not be already armed before calling this function.
  * @note    The callback function is invoked from interrupt context.
  *
- * @param[out] vtp      pointer to a @p virtual_timer_t structure
+ * @param[out] vtp      the @p virtual_timer_t structure pointer
  * @param[in] delay     the number of ticks before the operation timeouts, the
  *                      special values are handled as follow:
  *                      - @a TIME_INFINITE is allowed but interpreted as a
@@ -334,7 +285,7 @@ void chVTDoSetI(virtual_timer_t *vtp, sysinterval_t delay,
  * @pre     The timer must not be already armed before calling this function.
  * @note    The callback function is invoked from interrupt context.
  *
- * @param[out] vtp      pointer to a @p virtual_timer_t structure
+ * @param[out] vtp      the @p virtual_timer_t structure pointer
  * @param[in] delay     the number of ticks before the operation timeouts, the
  *                      special values are handled as follow:
  *                      - @a TIME_INFINITE is allowed but interpreted as a
@@ -342,7 +293,8 @@ void chVTDoSetI(virtual_timer_t *vtp, sysinterval_t delay,
  *                      - @a TIME_IMMEDIATE this value is not allowed.
  *                      .
  * @param[in] vtfunc    the timer callback function. After invoking the
- *                      callback the timer is restarted.
+ *                      callback the timer is disabled and the structure can
+ *                      be disposed or reused.
  * @param[in] par       a parameter that will be passed to the callback
  *                      function
  *
@@ -368,7 +320,7 @@ void chVTDoSetContinuousI(virtual_timer_t *vtp, sysinterval_t delay,
  * @brief   Disables a Virtual Timer.
  * @pre     The timer must be in armed state before calling this function.
  *
- * @param[in] vtp       pointer to a @p virtual_timer_t structure
+ * @param[in] vtp       the @p virtual_timer_t structure pointer
  *
  * @iclass
  */
@@ -453,7 +405,7 @@ void chVTDoResetI(virtual_timer_t *vtp) {
  * @brief   Returns the remaining time interval before next timer trigger.
  * @note    This function can be called while the timer is active.
  *
- * @param[in] vtp       pointer to a @p virtual_timer_t structure
+ * @param[in] vtp       the @p virtual_timer_t structure pointer
  * @return              The remaining time interval.
  *
  * @iclass
@@ -530,7 +482,7 @@ void chVTDoTickI(void) {
   }
 #else /* CH_CFG_ST_TIMEDELTA > 0 */
   virtual_timer_t *vtp;
-  sysinterval_t nowdelta;
+  sysinterval_t delta, nowdelta;
   systime_t now;
 
   /* Looping through timers consuming all timers with deltas lower or equal
@@ -577,7 +529,7 @@ void chVTDoTickI(void) {
 
     /* If a reload is defined the timer needs to be restarted.*/
     if (unlikely(vtp->reload > (sysinterval_t)0)) {
-      sysinterval_t delta, delay;
+      sysinterval_t delay;
 
       /* Refreshing the now delta after spending time in the callback for
          a more accurate detection of too fast reloads.*/
@@ -634,13 +586,11 @@ void chVTDoTickI(void) {
     return;
   }
 
-  /* The "unprocessed nowdelta" time slice is added to "last time"
-     and subtracted to next timer's delta.*/
-  vtlp->lasttime += nowdelta;
-  vtp->dlist.delta -= nowdelta;
+  /* Calculating the delta to the next alarm time.*/
+  delta = vtp->dlist.delta - nowdelta;
 
   /* Update alarm time to next timer.*/
-  vt_set_alarm(now, vtp->dlist.delta);
+  vt_set_alarm(now, delta);
 #endif /* CH_CFG_ST_TIMEDELTA > 0 */
 }
 
