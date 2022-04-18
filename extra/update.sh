@@ -4,7 +4,7 @@ if [ ! -d "extra/chibios" ]; then
     svn checkout https://svn.osdn.net/svnroot/chibios/tags/ver21.11.1/os/ extra/chibios
 fi
 if [ ! -d "extra/cmsis" ]; then
-    git clone --depth 1 https://github.com/ARM-software/CMSIS_5 extra/cmsis
+    git clone --depth 1 -b 5.8.0 https://github.com/ARM-software/CMSIS_5 extra/cmsis
 fi
 
 rm -r src/os/*
