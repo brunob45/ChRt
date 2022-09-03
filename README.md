@@ -1,5 +1,7 @@
 #### ChRt - ChibiOS/RT Arduino Library
 
+[![PlatformIO CI](https://github.com/brunob45/ChRt/actions/workflows/compile.yaml/badge.svg)](https://github.com/brunob45/ChRt/actions/workflows/compile.yaml)
+
 This is an updated version of ChibiOS for Arduino, forked from greiman/ChRt. 
 
 - Teensy 4.0 has support for free running tick-less mode (default) and periodic mode.
