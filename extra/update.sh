@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CHIBIOS_VERSION=21.11.2
+CHIBIOS_VERSION=21.11.3
 CMSIS_VERSION=5.9.0
 
 if [ ! -d "extra/chibios" ]; then
