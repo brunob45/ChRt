@@ -1,9 +1,9 @@
 #ifndef chtypes_rt_h
 #define chtypes_rt_h
 #ifdef __AVR__
-#include "avr/chtypes.h"
+#include "os/avr/chtypes.h"
 #elif defined(__arm__)
-#include "arm/chtypes.h"
+#include "os/arm/chtypes.h"
 #else 
 #error "unknown processor type"
 #endif  // __AVR__

@@ -4,7 +4,7 @@
  * \file
  * \brief main ChRt include file.
  */
-#include "rt/include/ch.h"
+#include "ch.h"
 #include "hal_st.h"
 
 /** Size of handler stack. */
