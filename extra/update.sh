@@ -1,15 +1,17 @@
 #!/bin/bash
 
 CHIBIOS_VERSION=21.11.3
-CMSIS_VERSION=v6.0.0
+CMSIS_VERSION=6.0.0
 
 if [ ! -d "extra/chibios" ]; then
     echo "Downloading ChibiOS ${CHIBIOS_VERSION}"
-    svn checkout https://svn.osdn.net/svnroot/chibios/tags/ver${CHIBIOS_VERSION}/os/ extra/chibios
+    #svn is deprecated
+    #svn checkout https://svn.osdn.net/svnroot/chibios/tags/ver${CHIBIOS_VERSION}/os/ extra/chibios
+     git clone --depth 1 -b ver${CHIBIOS_VERSION} https://github.com/ChibiOS/ChibiOS extra/chibios
 fi
 if [ ! -d "extra/cmsis" ]; then
     echo "Downloading CMSIS ${CMSIS_VERSION}"
-    git clone --depth 1 -b ${CMSIS_VERSION} https://github.com/ARM-software/CMSIS_6 extra/cmsis
+    git clone --depth 1 -b v${CMSIS_VERSION} https://github.com/ARM-software/CMSIS_6 extra/cmsis
 fi
 
 echo "Replacing files"
