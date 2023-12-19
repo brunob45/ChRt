@@ -1,11 +1,5 @@
-/**************************************************************************//**
- * @file     cmsis_compiler.h
- * @brief    CMSIS compiler generic header file
- * @version  V5.1.0
- * @date     09. October 2018
- ******************************************************************************/
 /*
- * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
+ * Copyright (c) 2009-2023 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,47 +16,91 @@
  * limitations under the License.
  */
 
+/*
+ * CMSIS Compiler Generic Header File
+ */
+
 #ifndef __CMSIS_COMPILER_H
 #define __CMSIS_COMPILER_H
 
 #include <stdint.h>
 
 /*
- * Arm Compiler 4/5
+ * Arm Compiler above 6.10.1 (armclang)
  */
-#if   defined ( __CC_ARM )
-  #include "cmsis_armcc.h"
+#if defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6100100)
+  #if __ARM_ARCH_PROFILE == 'A'
+    #include "./a-profile/cmsis_armclang_a.h"
+  #elif __ARM_ARCH_PROFILE == 'R'
+    #include "./r-profile/cmsis_armclang_r.h"
+  #elif __ARM_ARCH_PROFILE == 'M'
+    #include "./m-profile/cmsis_armclang_m.h"
+  #else
+    #error "Unknown Arm architecture profile"
+  #endif
+
+/*
+ * TI Arm Clang Compiler (tiarmclang)
+ */
+#elif defined (__ti__)
+  #if __ARM_ARCH_PROFILE == 'A'
+    #error "Core-A is not supported for this compiler"
+  #elif __ARM_ARCH_PROFILE == 'R'
+    #error "Core-R is not supported for this compiler"
+  #elif __ARM_ARCH_PROFILE == 'M'
+    #include "m-profile/cmsis_tiarmclang_m.h"
+  #else
+    #error "Unknown Arm architecture profile"
+  #endif
 
 
 /*
- * Arm Compiler 6.6 LTM (armclang)
+ * LLVM/Clang Compiler
  */
-#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050) && (__ARMCC_VERSION < 6100100)
-  #include "cmsis_armclang_ltm.h"
-
-  /*
- * Arm Compiler above 6.10.1 (armclang)
- */
-#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6100100)
-  #include "cmsis_armclang.h"
+#elif defined ( __clang__ )
+  #if __ARM_ARCH_PROFILE == 'A'
+    #include "a-profile/cmsis_clang_a.h"
+  #elif __ARM_ARCH_PROFILE == 'R'
+    #include "r-profile/cmsis_clang_r.h"
+  #elif __ARM_ARCH_PROFILE == 'M'
+    #include "m-profile/cmsis_clang_m.h"
+  #else
+    #error "Unknown Arm architecture profile"
+  #endif
 
 
 /*
  * GNU Compiler
  */
 #elif defined ( __GNUC__ )
-  #include "cmsis_gcc.h"
+  #if __ARM_ARCH_PROFILE == 'A'
+    #include "a-profile/cmsis_gcc_a.h"
+  #elif __ARM_ARCH_PROFILE == 'R'
+    #include "r-profile/cmsis_gcc_r.h"
+  #elif __ARM_ARCH_PROFILE == 'M'
+    #include "m-profile/cmsis_gcc_m.h"
+  #else
+    #error "Unknown Arm architecture profile"
+  #endif
 
 
 /*
  * IAR Compiler
  */
 #elif defined ( __ICCARM__ )
-  #include <cmsis_iccarm.h>
+  #if __ARM_ARCH_PROFILE == 'A'
+    #include "a-profile/cmsis_iccarm_a.h"
+  #elif __ARM_ARCH_PROFILE == 'R'
+    #include "r-profile/cmsis_iccarm_r.h"
+  #elif __ARM_ARCH_PROFILE == 'M'
+    #include "m-profile/cmsis_iccarm_m.h"
+  #else
+    #error "Unknown Arm architecture profile"
+  #endif
 
 
 /*
- * TI Arm Compiler
+ * TI Arm Compiler (armcl)
  */
 #elif defined ( __TI_ARM__ )
   #include <cmsis_ccs.h>
@@ -97,10 +135,6 @@
   #ifndef   __PACKED_UNION
     #define __PACKED_UNION                         union __attribute__((packed))
   #endif
-  #ifndef   __UNALIGNED_UINT32        /* deprecated */
-    struct __attribute__((packed)) T_UINT32 { uint32_t v; };
-    #define __UNALIGNED_UINT32(x)                  (((struct T_UINT32 *)(x))->v)
-  #endif
   #ifndef   __UNALIGNED_UINT16_WRITE
     __PACKED_STRUCT T_UINT16_WRITE { uint16_t v; };
     #define __UNALIGNED_UINT16_WRITE(addr, val)    (void)((((struct T_UINT16_WRITE *)(void*)(addr))->v) = (val))
@@ -127,7 +161,12 @@
     #warning No compiler specific solution for __COMPILER_BARRIER. __COMPILER_BARRIER is ignored.
     #define __COMPILER_BARRIER()                   (void)0
   #endif
-
+  #ifndef __NO_INIT
+    #define __NO_INIT                              __attribute__ ((section (".noinit")))
+  #endif
+  #ifndef __ALIAS
+    #define __ALIAS(x)                             __attribute__ ((alias(x)))
+  #endif
 
 /*
  * TASKING Compiler
@@ -169,10 +208,6 @@
   #ifndef   __PACKED_UNION
     #define __PACKED_UNION                         union __packed__
   #endif
-  #ifndef   __UNALIGNED_UINT32        /* deprecated */
-    struct __packed__ T_UINT32 { uint32_t v; };
-    #define __UNALIGNED_UINT32(x)                  (((struct T_UINT32 *)(x))->v)
-  #endif
   #ifndef   __UNALIGNED_UINT16_WRITE
     __PACKED_STRUCT T_UINT16_WRITE { uint16_t v; };
     #define __UNALIGNED_UINT16_WRITE(addr, val)    (void)((((struct T_UINT16_WRITE *)(void *)(addr))->v) = (val))
@@ -190,7 +225,7 @@
     #define __UNALIGNED_UINT32_READ(addr)          (((const struct T_UINT32_READ *)(const void *)(addr))->v)
   #endif
   #ifndef   __ALIGNED
-    #define __ALIGNED(x)              __align(x)
+    #define __ALIGNED(x)                           __align(x)
   #endif
   #ifndef   __RESTRICT
     #warning No compiler specific solution for __RESTRICT. __RESTRICT is ignored.
@@ -200,7 +235,12 @@
     #warning No compiler specific solution for __COMPILER_BARRIER. __COMPILER_BARRIER is ignored.
     #define __COMPILER_BARRIER()                   (void)0
   #endif
-
+  #ifndef __NO_INIT
+    #define __NO_INIT                              __attribute__ ((section (".noinit")))
+  #endif
+  #ifndef __ALIAS
+    #define __ALIAS(x)                             __attribute__ ((alias(x)))
+  #endif
 
 /*
  * COSMIC Compiler
@@ -240,10 +280,6 @@
   #ifndef   __PACKED_UNION
     #define __PACKED_UNION                         @packed union
   #endif
-  #ifndef   __UNALIGNED_UINT32        /* deprecated */
-    @packed struct T_UINT32 { uint32_t v; };
-    #define __UNALIGNED_UINT32(x)                  (((struct T_UINT32 *)(x))->v)
-  #endif
   #ifndef   __UNALIGNED_UINT16_WRITE
     __PACKED_STRUCT T_UINT16_WRITE { uint16_t v; };
     #define __UNALIGNED_UINT16_WRITE(addr, val)    (void)((((struct T_UINT16_WRITE *)(void *)(addr))->v) = (val))
@@ -272,7 +308,12 @@
     #warning No compiler specific solution for __COMPILER_BARRIER. __COMPILER_BARRIER is ignored.
     #define __COMPILER_BARRIER()                   (void)0
   #endif
-
+  #ifndef __NO_INIT
+    #define __NO_INIT                              __attribute__ ((section (".noinit")))
+  #endif
+  #ifndef __ALIAS
+    #define __ALIAS(x)                             __attribute__ ((alias(x)))
+  #endif
 
 #else
   #error Unknown compiler.

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CHIBIOS_VERSION=21.11.3
-CMSIS_VERSION=5.9.0
+CMSIS_VERSION=v6.0.0
 
 if [ ! -d "extra/chibios" ]; then
     echo "Downloading ChibiOS ${CHIBIOS_VERSION}"
@@ -9,7 +9,7 @@ if [ ! -d "extra/chibios" ]; then
 fi
 if [ ! -d "extra/cmsis" ]; then
     echo "Downloading CMSIS ${CMSIS_VERSION}"
-    git clone --depth 1 -b ${CMSIS_VERSION} https://github.com/ARM-software/CMSIS_5 extra/cmsis
+    git clone --depth 1 -b ${CMSIS_VERSION} https://github.com/ARM-software/CMSIS_6 extra/cmsis
 fi
 
 echo "Replacing files"
