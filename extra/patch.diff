@@ -135,3 +135,16 @@ index 19902b6..e0c872e 100644
  void chThdExit(msg_t msg) {
  
    chSysLock();
+diff --git a/src/os/arm/chcore_v7m.c b/src/os/arm/chcore_v7m.c
+index 8d1df88..966b72c 100644
+--- a/src/os/arm/chcore_v7m.c
++++ b/src/os/arm/chcore_v7m.c
+@@ -264,7 +264,7 @@ void port_init(os_instance_t *oip) {
+   /* DWT cycle counter enable, note, the M7 requires DWT unlocking.*/
+   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+ #if CORTEX_MODEL == 7
+-  DWT->LAR = 0xC5ACCE55U;
++  ITM->LAR = 0xC5ACCE55U;  // BBO
+ #endif
+   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+ 
