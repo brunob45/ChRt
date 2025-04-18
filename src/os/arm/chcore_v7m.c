@@ -264,7 +264,7 @@ void port_init(os_instance_t *oip) {
   /* DWT cycle counter enable, note, the M7 requires DWT unlocking.*/
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 #if CORTEX_MODEL == 7
-  DWT->LAR = 0xC5ACCE55U;
+  ITM->LAR = 0xC5ACCE55U;  // BBO
 #endif
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
